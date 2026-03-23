@@ -1,0 +1,154 @@
+import {
+  Engine,
+  Scene,
+  ArcRotateCamera,
+  HemisphericLight,
+  DirectionalLight,
+  ShadowGenerator,
+  Vector3,
+  Color3,
+  Color4,
+  Tools,
+  Logger,
+  GlowLayer,
+  HighlightLayer,
+  type AbstractMesh,
+} from '@babylonjs/core';
+
+export interface SceneContext {
+  engine: Engine;
+  scene: Scene;
+  camera: ArcRotateCamera;
+  hemiLight: HemisphericLight;
+  sunLight: DirectionalLight;
+  glowLayer: GlowLayer | null;
+  highlightLayer: HighlightLayer | null;
+  dispose: () => void;
+}
+
+export interface CreateSceneOptions {
+  enableGlow?: boolean;
+}
+
+export function createScene(
+  canvas: HTMLCanvasElement,
+  options?: CreateSceneOptions,
+): SceneContext {
+  // Suppress Draco normalized-flag warnings
+  Logger.LogLevels = Logger.ErrorLogLevel;
+
+  const engine = new Engine(canvas, true, {
+    preserveDrawingBuffer: true,
+    stencil: true,
+  });
+  engine.setHardwareScalingLevel(1 / Math.min(window.devicePixelRatio, 2));
+
+  // Disable UBOs so lights use regular uniforms instead of uniform blocks.
+  // WebGL2 limits uniform blocks to 12 per shader stage which caps lights at ~10.
+  // Regular uniforms support many more lights (20+).
+  engine.disableUniformBuffers = true;
+
+  const scene = new Scene(engine);
+  scene.clearColor = new Color4(0.04, 0.055, 0.1, 1);
+
+  // Linear fog to fade the ground grid edges into the background
+  scene.fogMode = Scene.FOGMODE_LINEAR;
+  scene.fogColor = new Color3(0.04, 0.055, 0.1);
+  scene.fogStart = 25;
+  scene.fogEnd = 50;
+
+  // Camera
+  const camera = new ArcRotateCamera(
+    'cam',
+    Tools.ToRadians(0),
+    Tools.ToRadians(0.5),
+    22,
+    Vector3.Zero(),
+    scene,
+  );
+  camera.fov = 0.6;
+  camera.minZ = 0.1;
+  camera.maxZ = 100;
+  camera.inputs.clear();
+  camera.inputs.addMouseWheel();
+  camera.inputs.addPointers();
+  camera.panningAxis = new Vector3(1, 1, 1);
+  camera.panningSensibility = 75;
+  camera.angularSensibilityX = 800;
+  camera.angularSensibilityY = 800;
+  camera.lowerRadiusLimit = 5;
+  camera.upperRadiusLimit = 60;
+  camera.wheelPrecision = 5;
+  camera.attachControl(canvas, true);
+
+  // Ambient fill light — gentle fill so HA lights stand out
+  const hemiLight = new HemisphericLight('hemi', new Vector3(0, 1, 0), scene);
+  hemiLight.intensity = 0.4;
+  hemiLight.diffuse = new Color3(1.0, 1.0, 1.0);
+  hemiLight.groundColor = new Color3(0.4, 0.4, 0.4);
+
+  // Directional sun light
+  const sunLight = new DirectionalLight('sun', new Vector3(-1, -2, -1), scene);
+  sunLight.intensity = 0.6;
+  sunLight.diffuse = new Color3(1.0, 0.95, 0.85);
+  sunLight.autoCalcShadowZBounds = true;
+
+  // Glow layer for emissive bloom (dashboard only)
+  let glowLayer: GlowLayer | null = null;
+  let highlightLayer: HighlightLayer | null = null;
+  if (options?.enableGlow) {
+    glowLayer = new GlowLayer('glow', scene);
+    glowLayer.intensity = 0.8;
+
+    highlightLayer = new HighlightLayer('pendingHL', scene);
+    highlightLayer.innerGlow = false;
+    highlightLayer.outerGlow = true;
+    highlightLayer.blurHorizontalSize = 1;
+    highlightLayer.blurVerticalSize = 1;
+  }
+
+  // Render loop
+  engine.runRenderLoop(() => scene.render());
+
+  const onResize = () => engine.resize();
+  window.addEventListener('resize', onResize);
+
+  function dispose() {
+    window.removeEventListener('resize', onResize);
+    engine.stopRenderLoop();
+    scene.dispose();
+    engine.dispose();
+  }
+
+  return { engine, scene, camera, hemiLight, sunLight, glowLayer, highlightLayer, dispose };
+}
+
+/**
+ * Create a shadow generator for the sun (directional) light.
+ * Call after model is loaded, passing all meshes that should cast shadows.
+ */
+export function setupSunShadows(
+  ctx: SceneContext,
+  casters: AbstractMesh[],
+  modelDiagonal?: number,
+): ShadowGenerator {
+  // Fixed shadow frustum covering the whole model. The light's position
+  // is set in updateSunPosition() so the frustum is centered correctly.
+  if (modelDiagonal) {
+    ctx.sunLight.shadowFrustumSize = modelDiagonal * 1.5;
+    ctx.sunLight.shadowMinZ = 0.1;
+    ctx.sunLight.shadowMaxZ = 200;
+  }
+
+  const sg = new ShadowGenerator(4096, ctx.sunLight);
+  sg.usePercentageCloserFiltering = true;
+  sg.filteringQuality = ShadowGenerator.QUALITY_MEDIUM;
+  sg.bias = 0.001;
+  sg.normalBias = 0.02;
+
+  for (const mesh of casters) {
+    sg.addShadowCaster(mesh, false);
+  }
+
+  return sg;
+}

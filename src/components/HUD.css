@@ -1,0 +1,129 @@
+.hud {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* Corners */
+.corner {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border-color: #1e293b;
+  border-style: solid;
+  border-width: 0;
+}
+.corner.tl { top: 12px; left: 12px;   border-top-width: 1px; border-left-width: 1px; }
+.corner.tr { top: 12px; right: 12px;  border-top-width: 1px; border-right-width: 1px; }
+.corner.bl { bottom: 12px; left: 12px;  border-bottom-width: 1px; border-left-width: 1px; }
+.corner.br { bottom: 12px; right: 12px; border-bottom-width: 1px; border-right-width: 1px; }
+
+/* Title */
+.title-bar {
+  position: absolute;
+  top: 24px;
+  left: 32px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* HUD mini logo */
+.hud-logo {
+  width: 22px;
+  height: 22px;
+  overflow: visible;
+}
+
+.hud-logo-front { fill: var(--text); }
+
+.hud-logo-glow {
+  stroke: var(--green);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.title-bar .label {
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 300;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  opacity: 0.85;
+}
+
+.title-bar .label-sep {
+  color: var(--green);
+}
+
+/* Demo mode */
+.title-bar.demo .hud-logo-glow {
+  stroke: var(--orange);
+}
+
+.title-bar.demo .label-sep {
+  color: var(--orange);
+}
+
+/* Clock */
+.time-display {
+  position: absolute;
+  top: 24px;
+  right: 32px;
+  text-align: right;
+}
+
+.time-display .time {
+  color: var(--text);
+  font-size: 22px;
+  letter-spacing: 0.05em;
+  font-weight: 300;
+}
+
+.time-display .date {
+  color: var(--muted);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+
+@media (max-width: 768px) {
+  .title-bar {
+    top: 16px;
+    left: 18px;
+    gap: 8px;
+  }
+
+  .hud-logo {
+    width: 12px;
+    height: 12px;
+  }
+
+  .title-bar .label {
+    font-size: 11px;
+    letter-spacing: 0.05em;
+  }
+
+  .time-display {
+    top: 16px;
+    right: 18px;
+  }
+
+  .time-display .time {
+    font-size: 11px;
+  }
+
+  .time-display .date {
+    font-size: 5px;
+  }
+
+  .corner {
+    width: 10px;
+    height: 10px;
+  }
+
+  .corner.tl { top: 8px; left: 8px; }
+  .corner.tr { top: 8px; right: 8px; }
+  .corner.bl { bottom: 8px; left: 8px; }
+  .corner.br { bottom: 8px; right: 8px; }
+}

@@ -1,0 +1,108 @@
+.dashboard-wrapper {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: row;
+  overflow: hidden;
+}
+
+.dashboard {
+  flex: 1;
+  height: 100%;
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  overflow: visible;
+}
+
+.dashboard > canvas {
+  position: absolute;
+  top: 0;
+  left: calc(-1 * var(--panel-size, 0px));
+  width: calc(100% + 2 * var(--panel-size, 0px));
+  height: 100%;
+  display: block;
+  touch-action: none;
+}
+
+/* Home view setting overlay */
+.home-view-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 80px;
+  pointer-events: none;
+  z-index: 50;
+}
+
+.home-view-overlay-box {
+  pointer-events: auto;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px 28px;
+  text-align: center;
+  font-family: var(--font);
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.home-view-overlay-box p {
+  margin: 0;
+  font-size: 13px;
+}
+
+.home-view-overlay-hint {
+  opacity: 0.6;
+  font-size: 11px !important;
+}
+
+.home-view-overlay-hint kbd {
+  display: inline-block;
+  padding: 1px 6px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-family: var(--font);
+  font-size: 11px;
+}
+
+.home-view-overlay-cancel {
+  margin-top: 4px;
+  padding: 4px 16px;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 11px;
+  cursor: pointer;
+  opacity: 0.7;
+  transition: opacity 0.15s;
+}
+
+.home-view-overlay-cancel:hover {
+  opacity: 1;
+}
+
+@media (max-width: 768px) {
+  .dashboard-wrapper {
+    flex-direction: column;
+  }
+
+  .dashboard {
+    order: -1; /* canvas on top, panel on bottom */
+  }
+
+  .dashboard > canvas {
+    left: 0;
+    top: auto;
+    bottom: calc(-1 * var(--panel-size, 0px));
+    width: 100%;
+    height: calc(100% + 2 * var(--panel-size, 0px));
+  }
+}

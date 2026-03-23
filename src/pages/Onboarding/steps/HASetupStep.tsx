@@ -1,0 +1,137 @@
+import { useState } from 'react';
+import { updateSettings } from '../../../services/settingsStore';
+
+interface Props {
+  onComplete: () => void;
+  initialHA?: { url: string; port: number; token: string; error?: string };
+}
+
+/** Test HA connection by opening a temporary WebSocket. */
+export async function testHA(url: string, port: number, token: string): Promise<{ success: boolean; error?: string }> {
+  return new Promise((resolve) => {
+    const timeout = setTimeout(() => { ws.close(); resolve({ success: false, error: 'Timeout (5s)' }); }, 5000);
+    const ws = new WebSocket(`ws://${url}:${port}/api/websocket`);
+    ws.onmessage = (ev) => {
+      const msg = JSON.parse(ev.data);
+      if (msg.type === 'auth_required') {
+        ws.send(JSON.stringify({ type: 'auth', access_token: token }));
+      } else if (msg.type === 'auth_ok') {
+        clearTimeout(timeout); ws.close(); resolve({ success: true });
+      } else if (msg.type === 'auth_invalid') {
+        clearTimeout(timeout); ws.close(); resolve({ success: false, error: 'Invalid token' });
+      }
+    };
+    ws.onerror = () => { clearTimeout(timeout); ws.close(); resolve({ success: false, error: 'Connection failed' }); };
+  });
+}
+
+export default function HASetupStep({ onComplete, initialHA }: Props) {
+  const [url, setUrl] = useState(initialHA?.url ?? '');
+  const [port, setPort] = useState(initialHA?.port ?? 8123);
+  const [token, setToken] = useState(initialHA?.token ?? '');
+  const [status, setStatus] = useState<'idle' | 'testing' | 'success' | 'error'>(initialHA?.error ? 'error' : 'idle');
+  const [errorMsg, setErrorMsg] = useState(initialHA?.error ?? '');
+  const [saving, setSaving] = useState(false);
+
+  const handleTest = async () => {
+    if (!url || !token) return;
+    setStatus('testing');
+    setErrorMsg('');
+    try {
+      const result = await testHA(url, port, token);
+      if (result.success) {
+        setStatus('success');
+      } else {
+        setStatus('error');
+        setErrorMsg(result.error || 'Connection failed');
+      }
+    } catch {
+      setStatus('error');
+      setErrorMsg('Network error');
+    }
+  };
+
+  const handleSave = () => {
+    if (!url || !token) return;
+    setSaving(true);
+    try {
+      updateSettings('connection', { haSettings: { url, port, token } });
+      onComplete();
+    } catch {
+      setStatus('error');
+      setErrorMsg('Failed to save configuration');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="onboarding-step">
+      <div>
+        <h1>Home Assistant</h1>
+        <h2>Connect to your Home Assistant instance</h2>
+      </div>
+
+      <div className="onboarding-row">
+        <div className="onboarding-field" style={{ flex: 3 }}>
+          <label className="onboarding-label">IP Address or URL</label>
+          <input
+            className="onboarding-input"
+            type="text"
+            placeholder="192.168.1.xxx"
+            value={url}
+            onChange={(e) => { setUrl(e.target.value); setStatus('idle'); }}
+          />
+        </div>
+        <div className="onboarding-field" style={{ flex: 1 }}>
+          <label className="onboarding-label">Port</label>
+          <input
+            className="onboarding-input"
+            type="number"
+            value={port}
+            onChange={(e) => { setPort(parseInt(e.target.value) || 8123); setStatus('idle'); }}
+          />
+        </div>
+      </div>
+
+      <div className="onboarding-field">
+        <label className="onboarding-label">Long-Lived Access Token</label>
+        <input
+          className="onboarding-input"
+          type="password"
+          placeholder="eyJhbGci..."
+          value={token}
+          onChange={(e) => { setToken(e.target.value); setStatus('idle'); }}
+        />
+        <p>
+          Generate one in Home Assistant: Profile &gt; Security &gt; Long-lived access tokens
+        </p>
+      </div>
+
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+        <button
+          className="onboarding-btn"
+          onClick={handleTest}
+          disabled={!url || !token}
+        >
+          Test Connection
+        </button>
+        <button
+          className="onboarding-btn primary"
+          onClick={handleSave}
+          disabled={!url || !token || saving}
+        >
+          {saving ? 'Saving...' : 'Save & Continue'}
+        </button>
+      </div>
+
+      {status !== 'idle' && (
+        <div className={`onboarding-status ${status}`}>
+          {status === 'testing' && 'Testing connection...'}
+          {status === 'success' && '\u2713 Connected successfully'}
+          {status === 'error' && `\u2717 ${errorMsg}`}
+        </div>
+      )}
+    </div>
+  );
+}
