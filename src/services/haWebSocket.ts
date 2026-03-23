@@ -27,6 +27,12 @@ export interface HAConnectOptions {
   token: string;
 }
 
+/** Build a WebSocket URL, using wss:// when the page is served over HTTPS. */
+export function buildWsUrl(url: string, port: number): string {
+  const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
+  return `${protocol}://${url}:${port}/api/websocket`;
+}
+
 export class HAConnection {
   private ws: WebSocket | null = null;
   private msgId = 1;
@@ -46,7 +52,7 @@ export class HAConnection {
     this.callbacks.onStatusChanged?.('connecting');
 
     const { url, port } = this.options;
-    const wsUrl = `ws://${url}:${port}/api/websocket`;
+    const wsUrl = buildWsUrl(url, port);
     this.ws = new WebSocket(wsUrl);
 
     this.ws.onopen = () => {

@@ -6,7 +6,7 @@ import {
   Monitor, Smartphone, Search, RotateCw, Move,
   Github, HeartHandshake, Scale,
 } from 'lucide-react';
-import type { HAConnectionStatus } from '../services/haWebSocket';
+import { buildWsUrl, type HAConnectionStatus } from '../services/haWebSocket';
 import type { HASettings } from '../types';
 import { getConfig, resetConfig, updateConfig, exportBackup, importBackup } from '../services/configApi';
 import { clearSettings, getSetting, getSettings, updateSettings } from '../services/settingsStore';
@@ -213,7 +213,7 @@ export default function SettingsModal({
     if (!haUrl || !haToken) return;
     setHaSaveStatus('testing');
 
-    const ws = new WebSocket(`ws://${haUrl}:${haPort}/api/websocket`);
+    const ws = new WebSocket(buildWsUrl(haUrl, haPort));
     const resetError = () => setTimeout(() => setHaSaveStatus('idle'), 3000);
     const timeout = setTimeout(() => {
       ws.close();

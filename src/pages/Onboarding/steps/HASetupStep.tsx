@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { updateSettings } from '../../../services/settingsStore';
+import { buildWsUrl } from '../../../services/haWebSocket';
 
 interface Props {
   onComplete: () => void;
@@ -9,8 +10,8 @@ interface Props {
 /** Test HA connection by opening a temporary WebSocket. */
 export async function testHA(url: string, port: number, token: string): Promise<{ success: boolean; error?: string }> {
   return new Promise((resolve) => {
+    const ws = new WebSocket(buildWsUrl(url, port));
     const timeout = setTimeout(() => { ws.close(); resolve({ success: false, error: 'Timeout (5s)' }); }, 5000);
-    const ws = new WebSocket(`ws://${url}:${port}/api/websocket`);
     ws.onmessage = (ev) => {
       const msg = JSON.parse(ev.data);
       if (msg.type === 'auth_required') {
@@ -71,6 +72,17 @@ export default function HASetupStep({ onComplete, initialHA }: Props) {
         <h1>Home Assistant</h1>
         <h2>Connect to your Home Assistant instance</h2>
       </div>
+
+      {window.location.protocol === 'https:' && (
+        <div className="onboarding-tips">
+          <div className="onboarding-tips-title">HTTPS detected</div>
+          <ul>
+            <li>Your browser requires a secure WebSocket connection (WSS)</li>
+            <li>Make sure your Home Assistant is accessible over HTTPS (e.g. via Nabu Casa or a reverse proxy with SSL)</li>
+            <li>A local <code>ws://</code> address will not work from an HTTPS page</li>
+          </ul>
+        </div>
+      )}
 
       <div className="onboarding-row">
         <div className="onboarding-field" style={{ flex: 3 }}>
