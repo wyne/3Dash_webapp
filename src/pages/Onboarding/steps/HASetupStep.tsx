@@ -81,6 +81,21 @@ export default function HASetupStep({ onComplete, initialHA }: Props) {
             <li>Make sure your Home Assistant is accessible over HTTPS (e.g. via Nabu Casa or a reverse proxy with SSL)</li>
             <li>A local <code>ws://</code> address will not work from an HTTPS page</li>
           </ul>
+          <div style={{ marginTop: 12, fontSize: '0.9em', opacity: 0.85 }}>
+            Don't have Nabu Casa, or don't want to expose your Home Assistant to the internet?
+            No problem — host 3Dash directly on your HA server in a few clicks:
+          </div>
+          <a
+            href="https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2Fkdcius%2F3Dash_webapp"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ display: 'inline-block', marginTop: 8 }}
+          >
+            <img
+              src="https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg"
+              alt="Add repository to Home Assistant"
+            />
+          </a>
         </div>
       )}
 
