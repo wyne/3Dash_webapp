@@ -1,8 +1,9 @@
 # Stage 1: Build the SPA
 FROM node:20-alpine AS builder
 
+RUN apk add --no-cache git
 WORKDIR /app
-COPY .. .
+RUN git clone --depth 1 https://github.com/kdcius/3Dash_webapp.git .
 RUN npm ci
 RUN npm run build -- --mode addon
 
