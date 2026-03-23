@@ -3,6 +3,7 @@ ARG BUILD_FROM=ghcr.io/home-assistant/amd64-base:3.20
 # Stage 1: Build the SPA
 FROM node:20-alpine AS builder
 
+ARG BUILD_VERSION
 RUN apk add --no-cache git
 WORKDIR /app
 RUN git clone --depth 1 https://github.com/kdcius/3Dash_webapp.git .
