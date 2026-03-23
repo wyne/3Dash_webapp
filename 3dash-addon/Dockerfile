@@ -1,3 +1,5 @@
+ARG BUILD_FROM=ghcr.io/home-assistant/amd64-base:3.20
+
 # Stage 1: Build the SPA
 FROM node:20-alpine AS builder
 
@@ -8,7 +10,6 @@ RUN npm ci
 RUN npm run build -- --mode addon
 
 # Stage 2: Serve with nginx on HA base image
-ARG BUILD_FROM=ghcr.io/home-assistant/amd64-base:3.20
 FROM ${BUILD_FROM}
 
 RUN apk add --no-cache nginx
