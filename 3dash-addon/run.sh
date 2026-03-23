@@ -1,3 +1,3 @@
-#!/usr/bin/with-contenv bashio
+#!/usr/bin/env bashio
 
-exec nginx -g "daemon off;"
+nginx -g "daemon off;"
