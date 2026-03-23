@@ -454,7 +454,7 @@
 /* ── GitHub link ── */
 .onboarding-github-link {
   position: absolute;
-  bottom: 50px;
+  bottom: calc(53px + 18px);
   right: 20px;
   z-index: 10;
   color: var(--muted);
