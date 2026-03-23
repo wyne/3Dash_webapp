@@ -2,8 +2,11 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 
-export default defineConfig({
-  base: '/3Dash_webapp/',
+export default defineConfig(({ mode }) => {
+  const basePath = mode === 'addon' ? '/' : '/3Dash_webapp/';
+
+  return {
+  base: basePath,
   plugins: [
     react(),
     VitePWA({
@@ -31,7 +34,7 @@ export default defineConfig({
             },
           },
         ],
-        navigateFallback: '/3Dash_webapp/index.html',
+        navigateFallback: `${basePath}index.html`,
       },
     }),
   ],
@@ -56,4 +59,5 @@ export default defineConfig({
   server: {
     host: true,
   },
+};
 });
