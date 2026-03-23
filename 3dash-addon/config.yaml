@@ -1,5 +1,5 @@
 name: "3Dash"
-version: "1.0.5"
+version: "1.0.6"
 slug: "3dash"
 description: "3D Dashboard for Home Assistant"
 url: "https://github.com/kdcius/3Dash_webapp"
@@ -7,12 +7,9 @@ arch:
   - amd64
   - aarch64
   - armv7
-ingress: true
-ingress_port: 8099
-panel_icon: "mdi:home-floor-3"
-panel_title: "3Dash"
+ingress: false
 ports:
-  8099/tcp: null
+  8099/tcp: 8099
 ports_description:
   8099/tcp: "Web interface"
 init: false

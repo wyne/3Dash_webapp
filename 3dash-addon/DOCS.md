@@ -2,20 +2,22 @@
 
 ## Getting started
 
-Once the add-on is installed and running, open it from the Home Assistant sidebar. The onboarding wizard will guide you through the initial setup:
+Once the add-on is installed and running, open 3Dash in your browser at:
+
+```
+http://<your-ha-ip>:8099
+```
+
+Replace `<your-ha-ip>` with the IP address of your Home Assistant machine (e.g. `http://192.168.1.100:8099`).
+
+The onboarding wizard will guide you through the initial setup:
 
 1. Enter your Home Assistant URL and port (default: `8123`).
 2. Provide a **long-lived access token** (create one in your HA profile under **Security > Long-lived access tokens**).
 3. Set your location (latitude/longitude) for accurate sun positioning.
 4. Upload a `.glb` 3D model of your home.
 
-## Accessing without the HA sidebar
-
-By default, 3Dash is only accessible through the Home Assistant ingress (sidebar). To access it directly from any browser on your network:
-
-1. Go to **Settings > Add-ons > 3Dash > Configuration**.
-2. Set the **Web interface** port to `8099` (or any available port).
-3. Open `http://<your-ha-ip>:8099` in your browser.
+The default port is `8099`. You can change it in **Settings > Add-ons > 3Dash > Configuration**.
 
 ## Configuration
 
