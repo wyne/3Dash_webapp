@@ -21,11 +21,12 @@ interface Props {
   onCardEdit?: (card: SidePanelCard) => void;
   onCardDelete?: (cardId: string) => void;
   onCardAdd?: () => void;
+  onExitSimulation?: () => void;
 }
 
 const PANEL_PADDING = 24; // 12px each side
 
-export default function SidePanel({ config, ha, cardStates, onSettingsOpen, panelSize, onPanelResize, editMode, onEditDone, onLayoutChange, onSetTemperature, onSetHvacMode, onCardEdit, onCardDelete, onCardAdd }: Props) {
+export default function SidePanel({ config, ha, cardStates, onSettingsOpen, panelSize, onPanelResize, editMode, onEditDone, onLayoutChange, onSetTemperature, onSetHvacMode, onCardEdit, onCardDelete, onCardAdd, onExitSimulation }: Props) {
   const innerRef = useRef<HTMLDivElement>(null);
   const gridWidth = panelSize - PANEL_PADDING;
   const [gridHeight, setGridHeight] = useState(200);
@@ -126,11 +127,18 @@ export default function SidePanel({ config, ha, cardStates, onSettingsOpen, pane
               </button>
             </>
           ) : (
-            onSettingsOpen && (
-              <button className="side-panel-settings-btn" onClick={onSettingsOpen}>
-                &#9881; Settings
-              </button>
-            )
+            <>
+              {onSettingsOpen && (
+                <button className="side-panel-settings-btn" onClick={onSettingsOpen}>
+                  &#9881; Settings
+                </button>
+              )}
+              {onExitSimulation && (
+                <button className="side-panel-exit-sim-btn" onClick={onExitSimulation}>
+                  Exit Simulation
+                </button>
+              )}
+            </>
           )}
         </div>
       </div>

@@ -2,6 +2,7 @@ import JSZip from 'jszip';
 import type { AppConfig, DisplayConfig, LightConfig, LightGroup, ShadowWallConfig, SidePanelConfig, TubeConfig } from '../types';
 import { saveModel as dbSaveModel, getModel as dbGetModel, deleteModel as dbDeleteModel } from './storageApi';
 import { getSettings, setAllSettings, type AppSettings } from './settingsStore';
+import { isSimulationActive } from '../contexts/SimulationModeContext';
 
 const CONFIG_KEY = 'config';
 
@@ -16,8 +17,20 @@ export function hasConfig(): boolean {
   return localStorage.getItem(CONFIG_KEY) !== null;
 }
 
-/** Read config from localStorage. Returns default config if none exists. */
+/**
+ * In-memory config override used by simulation mode.
+ */
+let simulationConfigOverride: AppConfig | null = null;
+
+/** Set (or clear) the in-memory simulation config. */
+export function setSimulationConfigOverride(c: AppConfig | null): void {
+  simulationConfigOverride = c ? structuredClone(c) : null;
+}
+
+/** Read config from localStorage (or from the simulation override). */
 export function getConfig(): AppConfig {
+  if (simulationConfigOverride) return structuredClone(simulationConfigOverride);
+
   const raw = localStorage.getItem(CONFIG_KEY);
   if (!raw) return { ...DEFAULT_CONFIG };
   try {
@@ -38,6 +51,13 @@ export function updateConfig(data: {
   tubes?: TubeConfig[];
   onboarding?: { completed: boolean };
 }): void {
+  if (isSimulationActive()) {
+    // Update in-memory override so the UI reacts, but never persist
+    if (simulationConfigOverride) {
+      Object.assign(simulationConfigOverride, data);
+    }
+    return;
+  }
   const current = getConfig();
   const merged = { ...current, ...data };
   localStorage.setItem(CONFIG_KEY, JSON.stringify(merged));

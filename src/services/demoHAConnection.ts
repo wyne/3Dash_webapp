@@ -1,5 +1,6 @@
 import type { HAState, LightConfig, LightType } from '../types';
 import type { HACallbacks } from './haWebSocket';
+import { isSimulationActive } from '../contexts/SimulationModeContext';
 
 const STORAGE_KEY = 'demoLightStates';
 
@@ -20,7 +21,9 @@ function persistStates(states: Map<string, HAState>): void {
       obj[id] = s;
     }
   }
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(obj));
+  if (!isSimulationActive()) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(obj));
+  }
 }
 
 /** Random RGB in the blue-to-red range, with even visual distribution. */
@@ -47,6 +50,19 @@ function randomBlueToRed(): [number, number, number] {
   ];
 }
 
+/** Fluctuation config: base value ± range, with optional decimal places. */
+const SENSOR_FLUCTUATION: Record<string, { base: number; range: number; decimals?: number }> = {
+  'sensor.temp_hum_sensor_temperature': { base: 21.3, range: 0.4, decimals: 1 },
+  'sensor.temp_hum_sensor_humidity': { base: 54, range: 3 },
+  'sensor.indoor_temperature': { base: 21.3, range: 0.4, decimals: 1 },
+  'sensor.indoor_humidity': { base: 54, range: 3 },
+  'sensor.home_power': { base: 1842, range: 200 },
+  'sensor.indoor_co2': { base: 623, range: 40 },
+  'sensor.download_speed': { base: 45, range: 30, decimals: 1 },
+  'sensor.upload_speed': { base: 13, range: 8, decimals: 1 },
+  'sensor.water_flow': { base: 3.4, range: 2, decimals: 1 },
+};
+
 /**
  * Fake HA connection for demo mode.
  * Maintains light states in localStorage so they survive page reloads.
@@ -56,6 +72,7 @@ export class DemoHAConnection {
   private states = new Map<string, HAState>();
   private lightTypes = new Map<string, LightType>();
   private disposed = false;
+  private sensorInterval: number | null = null;
 
   constructor(callbacks: HACallbacks) {
     this.callbacks = callbacks;
@@ -77,10 +94,17 @@ export class DemoHAConnection {
       });
     }
 
-    // Demo sensor values
+    // Demo sensor values — realistic defaults for common entity IDs
     const sensorDefaults: Record<string, { state: string; attributes: Record<string, unknown> }> = {
       'sensor.temp_hum_sensor_temperature': { state: '21.3', attributes: {} },
       'sensor.temp_hum_sensor_humidity': { state: '54', attributes: {} },
+      'sensor.indoor_temperature': { state: '21.3', attributes: {} },
+      'sensor.indoor_humidity': { state: '54', attributes: {} },
+      'sensor.home_power': { state: '1842', attributes: {} },
+      'sensor.indoor_co2': { state: '623', attributes: {} },
+      'sensor.download_speed': { state: '45.2', attributes: {} },
+      'sensor.upload_speed': { state: '12.8', attributes: {} },
+      'sensor.water_flow': { state: '3.4', attributes: {} },
       'climate.thermostat': {
         state: 'heat',
         attributes: {
@@ -100,6 +124,24 @@ export class DemoHAConnection {
         attributes: defaults?.attributes ?? {},
       });
     }
+
+    // Periodically fluctuate sensor values so the demo feels alive
+    this.sensorInterval = window.setInterval(() => {
+      if (this.disposed) return;
+      for (const id of sensorEntityIds) {
+        const current = this.states.get(id);
+        if (!current || id.startsWith('climate.')) continue;
+        const cfg = SENSOR_FLUCTUATION[id];
+        if (!cfg) continue;
+        const base = cfg.base;
+        const jitter = (Math.random() - 0.5) * 2 * cfg.range;
+        const value = Math.max(0, base + jitter);
+        const formatted = cfg.decimals != null
+          ? value.toFixed(cfg.decimals)
+          : String(Math.round(value));
+        this.updateState(id, formatted, current.attributes);
+      }
+    }, 3000);
 
     this.callbacks.onStatusChanged?.('connected');
     this.callbacks.onInitialStates?.([...this.states.values()]);
@@ -185,6 +227,10 @@ export class DemoHAConnection {
 
   dispose(): void {
     this.disposed = true;
+    if (this.sensorInterval != null) {
+      clearInterval(this.sensorInterval);
+      this.sensorInterval = null;
+    }
     this.states.clear();
   }
 }

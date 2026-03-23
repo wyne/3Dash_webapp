@@ -3,11 +3,11 @@ import AnimatedLogo from '../../../components/AnimatedLogo';
 
 interface Props {
   onConnect: () => void;
-  onDemo: () => void;
+  onSimulation: () => void;
   onImport: (file: File) => void | Promise<void>;
 }
 
-export default function WelcomeStep({ onConnect, onDemo, onImport }: Props) {
+export default function WelcomeStep({ onConnect, onSimulation, onImport }: Props) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [importing, setImporting] = useState(false);
 
@@ -34,8 +34,8 @@ export default function WelcomeStep({ onConnect, onDemo, onImport }: Props) {
         <button className="onboarding-btn primary" onClick={onConnect} disabled={importing}>
           Connect to Home Assistant
         </button>
-        <button className="onboarding-btn demo" onClick={onDemo} disabled={importing}>
-          Try Demo Mode
+        <button className="onboarding-btn simulation" onClick={onSimulation} disabled={importing}>
+          Try Simulation
         </button>
         <button
           className="onboarding-btn import"

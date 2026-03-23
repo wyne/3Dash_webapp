@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import type { GraphCard, HAHistoryPoint } from '../../../types';
 import { fetchHistory, generateDemoHistory } from '../../../services/haHistoryApi';
 import { useDemoMode } from '../../../contexts/DemoModeContext';
+import { useSimulationMode } from '../../../contexts/SimulationModeContext';
 import CardShell from './CardShell';
 
 interface Props {
@@ -10,12 +11,13 @@ interface Props {
 
 export default function GraphCardView({ card }: Props) {
   const { demoMode } = useDemoMode();
+  const { simulationMode } = useSimulationMode();
   const [points, setPoints] = useState<HAHistoryPoint[]>([]);
   const [error, setError] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (demoMode) {
+    if (demoMode || simulationMode) {
       setPoints(generateDemoHistory(card.period));
       setError(false);
       return;
@@ -38,7 +40,7 @@ export default function GraphCardView({ card }: Props) {
     load();
     const interval = setInterval(load, (card.refreshInterval ?? 300) * 1000);
     return () => { cancelled = true; clearInterval(interval); };
-  }, [card.entityId, card.period, card.refreshInterval, demoMode]);
+  }, [card.entityId, card.period, card.refreshInterval, demoMode, simulationMode]);
 
   // Parse numeric values and timestamps
   const numericPoints = points

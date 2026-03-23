@@ -24,6 +24,7 @@ import { getSetting, updateSettings, type HomeViewPose } from '../../services/se
 import { HAConnection, type HAConnectionStatus, type HALike, setActiveHAConnection } from '../../services/haWebSocket';
 import { DemoHAConnection } from '../../services/demoHAConnection';
 import { useDemoMode } from '../../contexts/DemoModeContext';
+import { useSimulationMode } from '../../contexts/SimulationModeContext';
 import { useCameraControls } from '../../contexts/CameraControlsContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { miredToKelvin, kelvinToRGB } from '../../utils/color';
@@ -42,6 +43,7 @@ import SettingsModal from '../../components/SettingsModal';
 import GuidedTour from '../../components/GuidedTour/GuidedTour';
 import { dashboardTourSteps } from '../../components/GuidedTour/tourSteps';
 import CardPropertiesPanel from '../../components/SidePanel/CardPropertiesPanel';
+import { SIMULATION_CONFIG, SIMULATION_MODEL_URL } from '../../data/simulationData';
 import type { AppConfig, DisplayConfig, LightConfig, RemoteButton, HAState, CardLayout, SidePanelCard } from '../../types';
 import './Dashboard.css';
 
@@ -49,6 +51,7 @@ const LONG_PRESS_MS = 500;
 
 export default function Dashboard() {
   const { demoMode } = useDemoMode();
+  const { simulationMode, setSimulationMode } = useSimulationMode();
   const camControls = useCameraControls();
   const { resolved: theme, updateAutoTheme } = useTheme();
   const navigate = useNavigate();
@@ -588,21 +591,40 @@ export default function Dashboard() {
 
     async function init() {
       // Load config
-      try {
-        const config = await getConfig();
-        if (disposed) return;
-        configRef.current = config;
-        setSidePanelConfig(config.sidePanel);
-        if (config.location.northOffset !== undefined) setNorthOffset(config.location.northOffset);
-      } catch (e) {
-        console.warn('[Config] Failed to load:', e);
-        configRef.current = { location: { latitude: 43.6077, longitude: 3.8766 }, lights: [] };
+      if (simulationMode) {
+        configRef.current = SIMULATION_CONFIG;
+        setSidePanelConfig(SIMULATION_CONFIG.sidePanel);
+      } else {
+        try {
+          const config = await getConfig();
+          if (disposed) return;
+          configRef.current = config;
+          setSidePanelConfig(config.sidePanel);
+          if (config.location.northOffset !== undefined) setNorthOffset(config.location.northOffset);
+        } catch (e) {
+          console.warn('[Config] Failed to load:', e);
+          configRef.current = { location: { latitude: 43.6077, longitude: 3.8766 }, lights: [] };
+        }
       }
       // HA settings now live exclusively in the settings store
       if (disposed) return;
 
-      // Load 3D model from IndexedDB
-      const modelBlob = await getModelBlob();
+      // Load 3D model
+      let modelBlob: Blob | null;
+      if (simulationMode) {
+        try {
+          const resp = await fetch(SIMULATION_MODEL_URL);
+          if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+          modelBlob = await resp.blob();
+        } catch (e) {
+          console.error('[Simulation] Failed to load model:', e);
+          setModelStatus('failed');
+          setModelStatusColor('var(--red)');
+          return;
+        }
+      } else {
+        modelBlob = await getModelBlob();
+      }
       if (!modelBlob) {
         navigate('/onboarding');
         return;
@@ -982,7 +1004,7 @@ export default function Dashboard() {
       },
     };
 
-    if (demoMode) {
+    if (demoMode || simulationMode) {
       const demo = new DemoHAConnection(callbacks);
       haRef.current = demo;
       setActiveHAConnection(demo);
@@ -1020,7 +1042,7 @@ export default function Dashboard() {
       haRef.current = null;
       setActiveHAConnection(null);
     };
-  }, [demoMode, sceneReady, applyLightState, applyRemoteMode, haSettingsVersion]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [demoMode, simulationMode, sceneReady, applyLightState, applyRemoteMode, haSettingsVersion]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Keep refs to modal entity IDs for use in callbacks
   const modalEntityIdRef = useRef<string | null>(null);
@@ -1452,6 +1474,10 @@ export default function Dashboard() {
         onCardAdd={handleCardAdd}
         onCardEdit={handleCardEdit}
         onCardDelete={handleCardDelete}
+        onExitSimulation={simulationMode ? () => {
+          setSimulationMode(false);
+          navigate('/onboarding');
+        } : undefined}
       />
       {cardPanelOpen && (
         <CardPropertiesPanel

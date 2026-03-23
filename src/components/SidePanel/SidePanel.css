@@ -116,6 +116,27 @@
   }
 }
 
+.side-panel-exit-sim-btn {
+  margin-top: 8px;
+  padding: 8px 0;
+  background: none;
+  border: 1px solid var(--orange);
+  border-radius: 4px;
+  color: var(--orange);
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  transition: all 0.15s;
+  width: 100%;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .side-panel-exit-sim-btn:hover {
+    background: rgba(251, 146, 60, 0.1);
+  }
+}
+
 .side-panel-add-btn {
   margin-top: 8px;
   padding: 8px 0;

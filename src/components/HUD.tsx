@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import type { DirectionalLight, HemisphericLight } from '@babylonjs/core';
 import { updateSunPosition, minutesToLabel } from '../babylon/SunController';
 import { useDemoMode } from '../contexts/DemoModeContext';
+import { useSimulationMode } from '../contexts/SimulationModeContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { getSetting } from '../services/settingsStore';
 import { LOGO_2D_VIEWBOX, LOGO_2D_SLASHES } from './logoData';
@@ -39,6 +40,7 @@ export default function HUD({
   cloudCoverFactor,
 }: Props) {
   const { demoMode } = useDemoMode();
+  const { simulationMode } = useSimulationMode();
   const { updateAutoTheme } = useTheme();
   const [hudVisible, setHudVisible] = useState(() => getSetting('appearance').hudVisible);
   const [clock, setClock] = useState('--:--');
@@ -92,7 +94,7 @@ export default function HUD({
       <div className="corner bl" />
       <div className="corner br" />
 
-      <div className={`title-bar${demoMode ? ' demo' : ''}`}>
+      <div className={`title-bar${simulationMode ? ' demo' : demoMode ? ' demo' : ''}`}>
         <svg className="hud-logo" viewBox={LOGO_2D_VIEWBOX} xmlns="http://www.w3.org/2000/svg">
           <defs>
             <filter id="hud-glow" x="-80%" y="-80%" width="260%" height="260%">
@@ -116,7 +118,7 @@ export default function HUD({
             ))}
           </g>
         </svg>
-        <div className="label">{'3Dash'}<span className="label-sep">{' · '}</span>{demoMode ? 'Demo View' : 'Live View'}</div>
+        <div className="label">{'3Dash'}<span className="label-sep">{' · '}</span>{simulationMode ? 'Simulation' : demoMode ? 'Demo View' : 'Live View'}</div>
       </div>
 
       <div className="time-display">

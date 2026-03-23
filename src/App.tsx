@@ -1,6 +1,7 @@
 import { lazy, Suspense } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { DemoModeProvider } from './contexts/DemoModeContext';
+import { SimulationModeProvider, useSimulationMode } from './contexts/SimulationModeContext';
 import { CameraControlsProvider } from './contexts/CameraControlsContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { hasConfig, getConfig } from './services/configApi';
@@ -11,13 +12,15 @@ const Onboarding = lazy(() => import('./pages/Onboarding/Onboarding'));
 
 function AppRoutes() {
   const location = useLocation();
+  const { simulationMode } = useSimulationMode();
 
   // No config at all → onboarding. Config exists but not completed → onboarding.
   const configExists = hasConfig();
   const onboardingDone = configExists && (getConfig().onboarding?.completed ?? false);
 
   // Redirect to onboarding if not completed and not already there
-  if (!onboardingDone && location.pathname !== '/onboarding') {
+  // (simulation mode bypasses onboarding)
+  if (!onboardingDone && !simulationMode && location.pathname !== '/onboarding') {
     return <Navigate to="/onboarding" replace />;
   }
 
@@ -34,9 +37,11 @@ export default function App() {
   return (
     <ThemeProvider>
       <DemoModeProvider>
-        <CameraControlsProvider>
-          <AppRoutes />
-        </CameraControlsProvider>
+        <SimulationModeProvider>
+          <CameraControlsProvider>
+            <AppRoutes />
+          </CameraControlsProvider>
+        </SimulationModeProvider>
       </DemoModeProvider>
     </ThemeProvider>
   );

@@ -1,5 +1,6 @@
 import type { HASettings } from '../types';
 import type { CameraControlsFlags } from '../contexts/CameraControlsContext';
+import { isSimulationActive } from '../contexts/SimulationModeContext';
 
 type ThemeMode = 'dark' | 'light' | 'auto' | 'system';
 
@@ -221,8 +222,21 @@ function migrateFlatToSectioned(flat: Record<string, unknown>): void {
 // Run migration on module load
 migrate();
 
-/** Read all settings from localStorage. */
+/**
+ * In-memory settings override used by simulation mode.
+ * When set, getSettings() returns this instead of reading localStorage.
+ */
+let simulationSettingsOverride: AppSettings | null = null;
+
+/** Set (or clear) the in-memory simulation settings. */
+export function setSimulationSettingsOverride(s: AppSettings | null): void {
+  simulationSettingsOverride = s ? structuredClone(s) : null;
+}
+
+/** Read all settings from localStorage (or from the simulation override). */
 export function getSettings(): AppSettings {
+  if (simulationSettingsOverride) return structuredClone(simulationSettingsOverride);
+
   const raw = localStorage.getItem(STORAGE_KEY);
   if (!raw) return structuredClone(DEFAULT_SETTINGS);
   try {
@@ -250,6 +264,13 @@ export function updateSettings<K extends SettingsSection>(
   section: K,
   patch: Partial<AppSettings[K]>,
 ): void {
+  if (isSimulationActive()) {
+    // Update the in-memory override so the UI reacts, but never persist
+    if (simulationSettingsOverride) {
+      simulationSettingsOverride[section] = { ...simulationSettingsOverride[section], ...patch };
+    }
+    return;
+  }
   const current = getSettings();
   current[section] = { ...current[section], ...patch };
   localStorage.setItem(STORAGE_KEY, JSON.stringify(current));

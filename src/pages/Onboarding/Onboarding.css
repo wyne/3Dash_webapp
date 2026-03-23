@@ -186,7 +186,7 @@
   cursor: not-allowed;
 }
 
-.onboarding-btn.demo {
+.onboarding-btn.simulation {
   background: rgba(251, 146, 60, 0.1);
   border-color: var(--orange);
   color: var(--orange);

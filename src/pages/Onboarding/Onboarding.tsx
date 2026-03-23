@@ -1,7 +1,9 @@
 import { useState, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Sun, Moon, Github } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useDemoMode } from '../../contexts/DemoModeContext';
+import { useSimulationMode } from '../../contexts/SimulationModeContext';
 import { getConfig, updateConfig, importBackup, getModelBlob } from '../../services/configApi';
 import { getSettings, getSetting } from '../../services/settingsStore';
 import WelcomeStep from './steps/WelcomeStep';
@@ -62,9 +64,10 @@ function countCustomSettings(): number {
 export default function Onboarding() {
   const { theme, resolved, setTheme } = useTheme();
   const { setDemoMode } = useDemoMode();
+  const { setSimulationMode } = useSimulationMode();
+  const navigate = useNavigate();
 
   const [currentStep, setCurrentStep] = useState(0);
-  const [isDemoMode, setIsDemoMode] = useState(false);
   const [isImportMode, setIsImportMode] = useState(false);
   const [hasModel, setHasModel] = useState(false);
   const [hasLocation, setHasLocation] = useState(false);
@@ -80,11 +83,10 @@ export default function Onboarding() {
     goTo(2); // HA setup
   }, [goTo, setDemoMode]);
 
-  const handleDemo = useCallback(() => {
-    setIsDemoMode(true);
-    setDemoMode(true);
-    goTo(3); // Skip HA, go to model upload
-  }, [goTo, setDemoMode]);
+  const handleSimulation = useCallback(() => {
+    setSimulationMode(true);
+    navigate('/');
+  }, [setSimulationMode, navigate]);
 
   const handleHAComplete = useCallback(() => {
     if (isImportMode) {
@@ -192,15 +194,13 @@ export default function Onboarding() {
 
   // Compute visible steps for the current path
   // Connect: Welcome → HA → Model → Location → Done
-  // Demo:    Welcome → Model → Location → Done
   // Import:  Welcome → Report → (HA →) Dashboard  (HA only if connection failed)
+  // Simulation: goes directly to dashboard (not through these steps)
   const pathSteps: number[] = isImportMode
     ? importReport?.haStatus === 'success'
       ? [0, 1]           // report then dashboard
       : [0, 1, 2]        // report then HA then dashboard
-    : isDemoMode
-      ? [0, 3, 4, 5]     // skip HA
-      : [0, 2, 3, 4, 5]; // full path
+    : [0, 2, 3, 4, 5];   // full path
 
   const dotIndex = pathSteps.indexOf(currentStep);
   const dotCount = pathSteps.length;
@@ -219,7 +219,7 @@ export default function Onboarding() {
 
       <div className="onboarding-steps">
         <div className={slideClass(0)}>
-          <WelcomeStep onConnect={handleConnect} onDemo={handleDemo} onImport={handleImport} />
+          <WelcomeStep onConnect={handleConnect} onSimulation={handleSimulation} onImport={handleImport} />
         </div>
 
         <div className={slideClass(1)}>
@@ -256,7 +256,7 @@ export default function Onboarding() {
 
         <div className={slideClass(5)}>
           <CompletionStep
-            demoMode={isDemoMode}
+            demoMode={false}
             hasModel={hasModel}
             hasLocation={hasLocation}
             onEnter={handleEnterDashboard}
