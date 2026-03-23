@@ -1,10 +1,10 @@
 {
-  "id": "/",
+  "id": "/3Dash_webapp/",
   "name": "3Dash",
   "short_name": "///",
   "description": "3D Dashboard with Home Assistant integration",
-  "start_url": "/",
-  "scope": "/",
+  "start_url": "/3Dash_webapp/",
+  "scope": "/3Dash_webapp/",
   "display": "standalone",
   "background_color": "#f5f5f5",
   "theme_color": "#f5f5f5",
@@ -12,25 +12,25 @@
   "prefer_related_applications": false,
   "icons": [
     {
-      "src": "/favicon/light/web-app-manifest-192x192.png",
+      "src": "/3Dash_webapp/favicon/light/web-app-manifest-192x192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/favicon/light/web-app-manifest-512x512.png",
+      "src": "/3Dash_webapp/favicon/light/web-app-manifest-512x512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/favicon/light/web-app-manifest-192x192.png",
+      "src": "/3Dash_webapp/favicon/light/web-app-manifest-192x192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "maskable"
     },
     {
-      "src": "/favicon/light/web-app-manifest-512x512.png",
+      "src": "/3Dash_webapp/favicon/light/web-app-manifest-512x512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
