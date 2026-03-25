@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { DisplayAnimation, DisplayCondition, DisplayConfig, DisplaySource, LightPosition, TextAlign } from '../types';
+import { generateUUID } from '../utils/uuid';
 import LucideIcon from './SidePanel/cards/LucideIcon';
 import { FormPanel, AccordionSection } from './FormPanel';
 
@@ -161,7 +162,7 @@ export default function DisplayForm({
     }
 
     onSave({
-      id: editDisplay?.id || crypto.randomUUID(),
+      id: editDisplay?.id || generateUUID(),
       label: label.trim() || validSources[0].entityId.split('.').pop() || 'Display',
       sources: validSources,
       position,

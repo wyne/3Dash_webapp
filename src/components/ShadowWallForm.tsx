@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { ShadowWallConfig, LightPosition } from '../types';
+import { generateUUID } from '../utils/uuid';
 import { FormPanel, AccordionSection } from './FormPanel';
 
 export interface WallPreviewInfo {
@@ -67,7 +68,7 @@ export default function ShadowWallForm({
 
   const handleSave = useCallback(() => {
     const cfg: ShadowWallConfig = {
-      id: editWall?.id || crypto.randomUUID(),
+      id: editWall?.id || generateUUID(),
       label: label || 'Wall',
       position,
       size: { width, height, depth },

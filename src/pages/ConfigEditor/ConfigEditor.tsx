@@ -1,5 +1,6 @@
 import { useRef, useEffect, useState, useCallback } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { generateUUID } from '../../utils/uuid';
 import {
   Vector3,
   MeshBuilder,
@@ -968,7 +969,7 @@ export default function ConfigEditor() {
   // Group CRUD
   const handleAddGroup = useCallback(
     async (name: string) => {
-      const newGroup: LightGroup = { id: crypto.randomUUID(), name };
+      const newGroup: LightGroup = { id: generateUUID(), name };
       const updated = [...lightGroups, newGroup];
       setLightGroups(updated);
       try {
@@ -1112,7 +1113,7 @@ export default function ConfigEditor() {
       const src = displays[idx];
       const copy: DisplayConfig = {
         ...src,
-        id: crypto.randomUUID(),
+        id: generateUUID(),
         label: (src.label || src.id) + ' (copy)',
         position: { ...src.position, x: src.position.x + 0.3 },
         sources: src.sources.map((s) => ({ ...s })),
@@ -1334,7 +1335,7 @@ export default function ConfigEditor() {
       const src = shadowWalls[idx];
       const copy: ShadowWallConfig = {
         ...src,
-        id: crypto.randomUUID(),
+        id: generateUUID(),
         label: (src.label || 'Wall') + ' (copy)',
         position: { ...src.position, x: src.position.x + 0.5 },
         size: { ...src.size },
@@ -1461,7 +1462,7 @@ export default function ConfigEditor() {
       const src = tubes[idx];
       const copy: TubeConfig = {
         ...src,
-        id: crypto.randomUUID(),
+        id: generateUUID(),
         label: (src.label || 'Tube') + ' (copy)',
         endX: src.endX + 0.5,
         lines: src.lines.map(l => ({ ...l })),

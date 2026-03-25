@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { TubeConfig, TubeLineConfig, TubeInputUnit, TubeOriginDirection, LightPosition } from '../types';
+import { generateUUID } from '../utils/uuid';
 import LucideIcon from './SidePanel/cards/LucideIcon';
 import { FormPanel, AccordionSection } from './FormPanel';
 
@@ -139,7 +140,7 @@ export default function TubeForm({
 
   const handleSave = useCallback(() => {
     const cfg: TubeConfig = {
-      id: editTube?.id || crypto.randomUUID(),
+      id: editTube?.id || generateUUID(),
       label: label || 'Tube',
       originDirection,
       diameter,
