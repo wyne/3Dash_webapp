@@ -134,8 +134,9 @@ const LightForm = forwardRef<LightFormHandle, Props>(function LightForm({
     },
   }));
 
-  // Populate form when editing
+  // Populate form when editing, or reset when opening for a new light
   useEffect(() => {
+    if (!open) return;
     if (editLight) {
       setEntityId(editLight.entityId);
       setLabel(editLight.label || '');
@@ -184,7 +185,7 @@ const LightForm = forwardRef<LightFormHandle, Props>(function LightForm({
       setHbPosY(2.5);
       setHbPosZ(0);
     }
-  }, [editLight]);
+  }, [editLight, open]);
 
   // Notify parent of shape/size changes for preview mesh
   useEffect(() => {
