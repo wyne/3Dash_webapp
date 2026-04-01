@@ -44,7 +44,10 @@ export default function ModelUploadStep({ onComplete }: Props) {
       await uploadModel(file);
       clearInterval(progressInterval);
       setProgress(100);
-      setTimeout(onComplete, 400);
+      setTimeout(() => {
+        setUploading(false);
+        onComplete();
+      }, 400);
     } catch {
       clearInterval(progressInterval);
       setError('Upload failed. Please try again.');
