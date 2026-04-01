@@ -105,6 +105,7 @@ export function createLightMesh(
     bulb.position = pos.clone();
     bulb.metadata = { entityId: cfg.entityId };
     bulb.material = mat;
+    bulb.applyFog = false;
   }
 
   let pointLight: PointLight | undefined;
@@ -255,6 +256,7 @@ function createPartMesh(
   mesh.position = new Vector3(part.position.x, part.position.y, part.position.z);
   mesh.metadata = { entityId };
   mesh.material = mat;
+  mesh.applyFog = false;
   return mesh;
 }
 
