@@ -213,8 +213,8 @@ export default function Onboarding() {
         title={`Switch to ${resolved === 'dark' ? 'light' : 'dark'} theme`}
       >
         {resolved === 'dark'
-          ? <Sun key="sun" size={32} strokeWidth={1.5} />
-          : <Moon key="moon" size={32} strokeWidth={1.5} />}
+          ? <Sun key="sun" size={28} strokeWidth={1.5} />
+          : <Moon key="moon" size={28} strokeWidth={1.5} />}
       </button>
 
       <div className="onboarding-steps">
@@ -297,7 +297,7 @@ export default function Onboarding() {
         rel="noopener noreferrer"
         title="View on GitHub"
       >
-        <Github size={32} strokeWidth={1.5} />
+        <Github size={28} strokeWidth={1.5} />
       </a>
     </div>
   );

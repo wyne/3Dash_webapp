@@ -83,10 +83,12 @@
   position: absolute;
   inset: 0;
   display: flex;
-  align-items: center;
+  align-items: safe center;
   justify-content: center;
   transition: transform 0.4s ease, opacity 0.4s ease;
   padding: 24px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .onboarding-slide.active {
@@ -141,6 +143,7 @@
   padding: 16px 32px;
   border-top: 1px solid var(--border);
   flex-shrink: 0;
+  position: relative;
 }
 
 .onboarding-nav-group {
@@ -429,6 +432,9 @@
 
 /* ── Steps indicator ── */
 .onboarding-dots {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
   display: flex;
   gap: 8px;
   justify-content: center;
@@ -454,8 +460,8 @@
 /* ── GitHub link ── */
 .onboarding-github-link {
   position: absolute;
-  bottom: calc(53px + 18px);
-  right: 20px;
+  top: 18px;
+  right: 60px;
   z-index: 10;
   color: var(--muted);
   transition: color 0.15s;
@@ -474,11 +480,45 @@
     font-size: 18px;
   }
 
+  .onboarding-slide {
+    padding: 60px 16px 16px;
+    align-items: flex-start;
+  }
+
+  .onboarding-step {
+    gap: 16px;
+  }
+
   .onboarding-nav {
     padding: 12px 16px;
   }
 
   .onboarding-row {
     flex-direction: column;
+  }
+
+  .onboarding-theme-toggle,
+  .onboarding-github-link {
+    top: 12px;
+  }
+
+  .onboarding-theme-toggle {
+    right: 12px;
+    width: 28px;
+    height: 28px;
+  }
+
+  .onboarding-theme-toggle svg {
+    width: 28px;
+    height: 28px;
+  }
+
+  .onboarding-github-link {
+    right: 48px;
+  }
+
+  .onboarding-github-link svg {
+    width: 28px;
+    height: 28px;
   }
 }
