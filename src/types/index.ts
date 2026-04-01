@@ -269,6 +269,8 @@ export interface ScriptCard extends BaseCard {
   type: 'script';
   entityId: string;
   icon?: string;
+  longPressEntityId?: string;
+  doublePressEntityId?: string;
 }
 
 export interface IndicatorCard extends BaseCard {

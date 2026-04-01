@@ -30,6 +30,8 @@ function buildCard(
   y: number,
   w: string,
   h: string,
+  longPressEntityId: string,
+  doublePressEntityId: string,
 ): SidePanelCard {
   const layout = {
     x,
@@ -40,7 +42,11 @@ function buildCard(
 
   switch (type) {
     case 'script':
-      return { id, type: 'script', title: title.trim(), showTitle, entityId: entityId.trim(), icon: icon || undefined, layout };
+      return {
+        id, type: 'script', title: title.trim(), showTitle, entityId: entityId.trim(), icon: icon || undefined, layout,
+        longPressEntityId: longPressEntityId.trim() || undefined,
+        doublePressEntityId: doublePressEntityId.trim() || undefined,
+      };
     case 'indicator':
       return {
         id, type: 'indicator', title: title.trim(), showTitle, entityId: entityId.trim(),
@@ -85,6 +91,12 @@ export default function CardPropertiesPanel({ card, onSave, onCancel, onPreview 
   const [refreshInterval, setRefreshInterval] = useState(
     card?.type === 'graph' ? String(card.refreshInterval ?? '') : '',
   );
+  const [longPressEntityId, setLongPressEntityId] = useState(
+    card?.type === 'script' ? (card.longPressEntityId ?? '') : '',
+  );
+  const [doublePressEntityId, setDoublePressEntityId] = useState(
+    card?.type === 'script' ? (card.doublePressEntityId ?? '') : '',
+  );
   const [w, setW] = useState(String(card?.layout.w ?? 2));
   const [h, setH] = useState(String(card?.layout.h ?? 1));
 
@@ -105,13 +117,15 @@ export default function CardPropertiesPanel({ card, onSave, onCancel, onPreview 
     setClimateEntityId('');
     setPeriod('24h');
     setRefreshInterval('');
+    setLongPressEntityId('');
+    setDoublePressEntityId('');
   }, [type, isEdit]);
 
   // Push live preview to parent on every field change (edit mode only)
   const emitPreview = useCallback(() => {
     if (!isEdit || !onPreview || !card) return;
-    onPreview(buildCard(card.id, type, title, showTitle, entityId, icon, unit, precision, climateEntityId, period, refreshInterval, card.layout.x, card.layout.y, w, h));
-  }, [isEdit, onPreview, card, type, title, showTitle, entityId, icon, unit, precision, climateEntityId, period, refreshInterval, w, h]);
+    onPreview(buildCard(card.id, type, title, showTitle, entityId, icon, unit, precision, climateEntityId, period, refreshInterval, card.layout.x, card.layout.y, w, h, longPressEntityId, doublePressEntityId));
+  }, [isEdit, onPreview, card, type, title, showTitle, entityId, icon, unit, precision, climateEntityId, period, refreshInterval, w, h, longPressEntityId, doublePressEntityId]);
 
   useEffect(() => {
     emitPreview();
@@ -122,7 +136,7 @@ export default function CardPropertiesPanel({ card, onSave, onCancel, onPreview 
   const handleSave = () => {
     if (!canSave) return;
     const id = card?.id ?? `card_${Date.now()}`;
-    const result = buildCard(id, type, title, showTitle, entityId, icon, unit, precision, climateEntityId, period, refreshInterval, card?.layout.x ?? 0, card?.layout.y ?? Infinity, w, h);
+    const result = buildCard(id, type, title, showTitle, entityId, icon, unit, precision, climateEntityId, period, refreshInterval, card?.layout.x ?? 0, card?.layout.y ?? Infinity, w, h, longPressEntityId, doublePressEntityId);
     onSave(result);
   };
 
@@ -166,6 +180,22 @@ export default function CardPropertiesPanel({ card, onSave, onCancel, onPreview 
               <label>Icon (Lucide name)</label>
               <input value={icon} onChange={e => setIcon(e.target.value)} placeholder="Thermometer" />
             </div>
+          )}
+
+          {type === 'script' && (
+            <>
+              <div className="card-props-section">Long Press Action</div>
+              <div className="card-props-field">
+                <label>Entity ID</label>
+                <input value={longPressEntityId} onChange={e => setLongPressEntityId(e.target.value)} placeholder="script.my_action" />
+              </div>
+
+              <div className="card-props-section">Double Press Action</div>
+              <div className="card-props-field">
+                <label>Entity ID</label>
+                <input value={doublePressEntityId} onChange={e => setDoublePressEntityId(e.target.value)} placeholder="script.my_action" />
+              </div>
+            </>
           )}
 
           {type === 'indicator' && (
