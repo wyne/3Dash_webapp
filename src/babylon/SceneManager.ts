@@ -131,7 +131,8 @@ export function setupSunShadows(
   ctx: SceneContext,
   casters: AbstractMesh[],
   modelDiagonal?: number,
-): ShadowGenerator {
+  resolution = 512,
+): ShadowGenerator | null {
   // Fixed shadow frustum covering the whole model. The light's position
   // is set in updateSunPosition() so the frustum is centered correctly.
   if (modelDiagonal) {
@@ -140,7 +141,9 @@ export function setupSunShadows(
     ctx.sunLight.shadowMaxZ = 200;
   }
 
-  const sg = new ShadowGenerator(4096, ctx.sunLight);
+  if (resolution === 0) return null; // shadows off
+
+  const sg = new ShadowGenerator(resolution, ctx.sunLight);
   sg.usePercentageCloserFiltering = true;
   sg.filteringQuality = ShadowGenerator.QUALITY_MEDIUM;
   sg.bias = 0.001;

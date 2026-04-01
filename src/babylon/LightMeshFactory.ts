@@ -45,6 +45,7 @@ export interface CreateLightMeshOptions {
   shadowCasters?: AbstractMesh[];
   stripConfig?: StripConfig;
   singleRange?: number;
+  shadowResolution?: number;
 }
 
 /** Minimum ratio between longest and shortest cube dimension to be treated as a strip. */
@@ -60,7 +61,7 @@ export function createLightMesh(
   id: string,
   options: CreateLightMeshOptions = {},
 ): LightMeshEntry {
-  const { withPointLight = false, shadowCasters, stripConfig, singleRange } = options;
+  const { withPointLight = false, shadowCasters, stripConfig, singleRange, shadowResolution } = options;
   const sc = stripConfig ?? DEFAULT_STRIP_CONFIG;
   const pos = new Vector3(cfg.position.x, cfg.position.y, cfg.position.z);
 
@@ -148,7 +149,7 @@ export function createLightMesh(
       const centerIdx = Math.floor(count / 2);
       const shadowLight = stripLights[centerIdx];
       if (shadowCasters && shadowCasters.length > 0) {
-        shadowGen = createPointShadowGen(shadowLight, shadowCasters);
+        shadowGen = createPointShadowGen(shadowLight, shadowCasters, shadowResolution);
       }
     } else {
       // Single point light at entity position
@@ -159,7 +160,7 @@ export function createLightMesh(
       pointLight.diffuse = new Color3(1, 0.9, 0.7);
 
       if (shadowCasters && shadowCasters.length > 0) {
-        shadowGen = createPointShadowGen(pointLight, shadowCasters);
+        shadowGen = createPointShadowGen(pointLight, shadowCasters, shadowResolution);
       }
     }
   }
@@ -219,8 +220,9 @@ export function createLightMesh(
 function createPointShadowGen(
   light: PointLight,
   shadowCasters: AbstractMesh[],
+  resolution = 512,
 ): ShadowGenerator {
-  const sg = new ShadowGenerator(2048, light);
+  const sg = new ShadowGenerator(resolution, light);
   sg.usePercentageCloserFiltering = true;
   sg.filteringQuality = ShadowGenerator.QUALITY_MEDIUM;
   sg.bias = 0;

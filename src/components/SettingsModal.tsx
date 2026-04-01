@@ -55,6 +55,12 @@ interface Props {
   perspective: boolean;
   onPerspectiveChange: (enabled: boolean) => void;
 
+  /* Shadow resolution */
+  sunShadowRes: number;
+  onSunShadowResChange: (res: number) => void;
+  pointShadowRes: number;
+  onPointShadowResChange: (res: number) => void;
+
   /* Debug */
   onDebugToggle: () => void;
 
@@ -105,6 +111,10 @@ export default function SettingsModal({
   onWeatherEnabledChange,
   perspective,
   onPerspectiveChange,
+  sunShadowRes,
+  onSunShadowResChange,
+  pointShadowRes,
+  onPointShadowResChange,
   onDebugToggle,
   onEditGrid,
   onChangeHomeView,
@@ -669,6 +679,36 @@ export default function SettingsModal({
                     >
                       Off
                     </button>
+                  </div>
+                </div>
+
+                <div className="settings-section">
+                  <div className="settings-section-label">Sun Shadow</div>
+                  <div className="settings-mode-toggle">
+                    {[0, 512, 1024, 2048, 4096].map((res) => (
+                      <button
+                        key={res}
+                        className={`settings-mode-btn${sunShadowRes === res ? ' active' : ''}`}
+                        onClick={() => onSunShadowResChange(res)}
+                      >
+                        {res === 0 ? 'Off' : res}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="settings-section">
+                  <div className="settings-section-label">Point Shadow</div>
+                  <div className="settings-mode-toggle">
+                    {[0, 256, 512, 1024, 2048].map((res) => (
+                      <button
+                        key={res}
+                        className={`settings-mode-btn${pointShadowRes === res ? ' active' : ''}`}
+                        onClick={() => onPointShadowResChange(res)}
+                      >
+                        {res === 0 ? 'Off' : res}
+                      </button>
+                    ))}
                   </div>
                 </div>
               </div>

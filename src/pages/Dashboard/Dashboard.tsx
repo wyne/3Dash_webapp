@@ -1,6 +1,6 @@
 import { useRef, useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Animation, Camera, Color3, Color4, CubicEase, EasingFunction, Tools, Vector3, type AbstractMesh, type Mesh, type Observer, type Scene } from '@babylonjs/core';
+import { Animation, Camera, Color3, Color4, CubicEase, EasingFunction, ShadowGenerator, Tools, Vector3, type AbstractMesh, type Mesh, type Observer, type Scene } from '@babylonjs/core';
 import { createScene, setupSunShadows, type SceneContext } from '../../babylon/SceneManager';
 import { loadModel, createShadowWalls } from '../../babylon/ModelLoader';
 import { createEdgeOutline, type EdgeOutlineControls } from '../../babylon/EdgeOutline';
@@ -149,6 +149,8 @@ export default function Dashboard() {
   const weatherEnabledRef = useRef(weatherEnabled);
   weatherEnabledRef.current = weatherEnabled;
   const [perspective, setPerspective] = useState(() => getSetting('render').perspective);
+  const [sunShadowRes, setSunShadowRes] = useState(() => getSetting('render').sunShadowRes);
+  const [pointShadowRes, setPointShadowRes] = useState(() => getSetting('render').pointShadowRes);
 
   // Sync 3D background with theme (respects custom bgColor)
   const syncSceneBg = useCallback(() => {
@@ -228,6 +230,47 @@ export default function Dashboard() {
   const handlePerspectiveChange = useCallback((enabled: boolean) => {
     setPerspective(enabled);
     updateSettings('render', { perspective: enabled });
+  }, []);
+
+  const handleSunShadowResChange = useCallback((res: number) => {
+    setSunShadowRes(res);
+    updateSettings('render', { sunShadowRes: res });
+    const ctx = sceneCtxRef.current;
+    const casters = shadowCastersRef.current;
+    if (!ctx || !casters) return;
+    const oldSg = ctx.sunLight.getShadowGenerator();
+    if (oldSg) oldSg.dispose();
+    if (res === 0) return;
+    const sg = new ShadowGenerator(res, ctx.sunLight);
+    sg.usePercentageCloserFiltering = true;
+    sg.filteringQuality = ShadowGenerator.QUALITY_MEDIUM;
+    sg.bias = 0.001;
+    sg.normalBias = 0.02;
+    for (const mesh of casters) sg.addShadowCaster(mesh, false);
+  }, []);
+
+  const handlePointShadowResChange = useCallback((res: number) => {
+    setPointShadowRes(res);
+    updateSettings('render', { pointShadowRes: res });
+    const map = meshMapRef.current;
+    const casters = shadowCastersRef.current;
+    if (!casters) return;
+    for (const key of Object.keys(map)) {
+      const entry = map[key];
+      if (!entry.shadowGen) continue;
+      const light = entry.shadowGen.getLight();
+      entry.shadowGen.dispose();
+      if (res === 0) { entry.shadowGen = undefined; continue; }
+      const sg = new ShadowGenerator(res, light);
+      sg.usePercentageCloserFiltering = true;
+      sg.filteringQuality = ShadowGenerator.QUALITY_MEDIUM;
+      sg.bias = 0;
+      sg.normalBias = 0.05;
+      for (const mesh of casters) sg.addShadowCaster(mesh, false);
+      entry.shadowGen = sg;
+    }
+    // Re-freeze shadow maps
+    freezePointLightShadows(meshMapRef.current);
   }, []);
 
   // Apply perspective mode to the camera
@@ -680,7 +723,7 @@ export default function Dashboard() {
         shadowCastersRef.current = allCasters;
 
         // Setup sun shadows with model geometry + shadow walls
-        const sunShadowGen = setupSunShadows(ctx, allCasters, result.diagonal);
+        const sunShadowGen = setupSunShadows(ctx, allCasters, result.diagonal, getSetting('render').sunShadowRes);
 
         // Create light meshes with shadow-casting PointLights
         // Cap point-light shadow generators to avoid VRAM exhaustion
@@ -693,6 +736,7 @@ export default function Dashboard() {
           const entry = createLightMesh(ctx.scene, cfg, cfg.entityId, {
             withPointLight: true,
             shadowCasters: canShadow ? result.shadowCasters : undefined,
+            shadowResolution: getSetting('render').pointShadowRes,
           });
           if (entry.shadowGen) shadowCount++;
           meshMapRef.current[cfg.entityId] = entry;
@@ -723,7 +767,7 @@ export default function Dashboard() {
         }
 
         // Weather effects (rain/snow particles + cloud cover)
-        weatherRef.current = createWeatherEffects(ctx.scene, sunShadowGen);
+        weatherRef.current = createWeatherEffects(ctx.scene, sunShadowGen ?? undefined);
         const pollWeather = async () => {
           if (!weatherEnabledRef.current) return;
           try {
@@ -1191,6 +1235,7 @@ export default function Dashboard() {
         shadowCasters: canShadow ? casters : undefined,
         stripConfig,
         singleRange,
+        shadowResolution: getSetting('render').pointShadowRes,
       });
       if (entry.shadowGen) shadowCount++;
       meshMapRef.current[cfg.entityId] = entry;
@@ -1580,6 +1625,10 @@ export default function Dashboard() {
           onWeatherEnabledChange={handleWeatherEnabledChange}
           perspective={perspective}
           onPerspectiveChange={handlePerspectiveChange}
+          sunShadowRes={sunShadowRes}
+          onSunShadowResChange={handleSunShadowResChange}
+          pointShadowRes={pointShadowRes}
+          onPointShadowResChange={handlePointShadowResChange}
           onDebugToggle={() => setDebugOpen((v) => !v)}
           onEditGrid={() => setGridEditMode(true)}
           onChangeHomeView={() => setHomeViewSetting(true)}

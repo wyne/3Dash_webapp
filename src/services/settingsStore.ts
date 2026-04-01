@@ -31,6 +31,8 @@ export interface RenderSettings {
   edgeWidth: number;
   groundGrid: boolean;
   perspective: boolean;
+  sunShadowRes: number;
+  pointShadowRes: number;
 }
 
 export interface EnvironmentSettings {
@@ -98,6 +100,8 @@ const DEFAULT_SETTINGS: AppSettings = {
     edgeWidth: 3,
     groundGrid: false,
     perspective: true,
+    sunShadowRes: 512,
+    pointShadowRes: 512,
   },
   environment: {
     sunLiveMode: true,
