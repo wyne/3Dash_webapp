@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
+import basicSsl from '@vitejs/plugin-basic-ssl';
 
 export default defineConfig(({ mode }) => {
   const basePath = mode === 'addon' ? './' : '/3Dash_webapp/';
@@ -9,6 +10,7 @@ export default defineConfig(({ mode }) => {
   base: basePath,
   plugins: [
     react(),
+    basicSsl(),
     VitePWA({
       registerType: 'autoUpdate',
       // Use the existing manifest.json in public/
@@ -58,6 +60,7 @@ export default defineConfig(({ mode }) => {
   },
   server: {
     host: true,
+    https: true,
   },
 };
 });
