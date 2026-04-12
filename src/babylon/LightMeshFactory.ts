@@ -86,9 +86,9 @@ export function createLightMesh(
     for (let i = 1; i < parts.length; i++) {
       extraBulbs.push(createPartMesh(scene, parts[i], `bulb_${id}_${i}`, mat, cfg.entityId));
     }
-    // All parts non-pickable when multi-part (hitbox handles clicks)
-    bulb.isPickable = false;
-    for (const eb of extraBulbs) eb.isPickable = false;
+    // Each part is independently pickable — no bounding-box proxy needed
+    bulb.enablePointerMoveEvents = true;
+    for (const eb of extraBulbs) eb.enablePointerMoveEvents = true;
   } else {
     const shape = cfg.shape || 'sphere';
     const sz = cfg.size || {};
@@ -169,36 +169,25 @@ export function createLightMesh(
   // Create custom hitbox mesh if configured (or auto-create for multi-part)
   let hitboxMesh: Mesh | undefined;
   let hitboxMat: StandardMaterial | undefined;
-  const needsHitbox = cfg.hitbox || hasParts;
-  if (needsHitbox) {
-    if (cfg.hitbox) {
-      const hbShape = cfg.hitbox.shape;
-      const hbSz = cfg.hitbox.size || {};
-      if (hbShape === 'cube') {
-        hitboxMesh = MeshBuilder.CreateBox(`hitbox_${id}`, {
-          width: hbSz.width ?? 0.5,
-          height: hbSz.height ?? 0.5,
-          depth: hbSz.depth ?? 0.5,
-        }, scene);
-      } else {
-        hitboxMesh = MeshBuilder.CreateSphere(`hitbox_${id}`, {
-          diameter: hbSz.diameter ?? 0.5,
-        }, scene);
-      }
-      const hbPos = cfg.hitbox.position
-        ? new Vector3(cfg.hitbox.position.x, cfg.hitbox.position.y, cfg.hitbox.position.z)
-        : pos.clone();
-      hitboxMesh.position = hbPos;
-    } else {
-      // Auto-create bounding-box hitbox for multi-part lights
-      const bounds = computePartsBounds(cfg.parts!);
+  const hbCfg = cfg.hitbox;
+  if (hbCfg) {
+    const hbShape = hbCfg.shape;
+    const hbSz = hbCfg.size || {};
+    if (hbShape === 'cube') {
       hitboxMesh = MeshBuilder.CreateBox(`hitbox_${id}`, {
-        width: bounds.size.x,
-        height: bounds.size.y,
-        depth: bounds.size.z,
+        width: hbSz.width ?? 0.5,
+        height: hbSz.height ?? 0.5,
+        depth: hbSz.depth ?? 0.5,
       }, scene);
-      hitboxMesh.position = bounds.center;
+    } else {
+      hitboxMesh = MeshBuilder.CreateSphere(`hitbox_${id}`, {
+        diameter: hbSz.diameter ?? 0.5,
+      }, scene);
     }
+    const hbPos = hbCfg.position
+      ? new Vector3(hbCfg.position.x, hbCfg.position.y, hbCfg.position.z)
+      : pos.clone();
+    hitboxMesh.position = hbPos;
     hitboxMesh.metadata = { entityId: cfg.entityId };
     hitboxMesh.isPickable = true;
     hitboxMesh.enablePointerMoveEvents = true;
@@ -211,8 +200,8 @@ export function createLightMesh(
     hitboxMesh.material = hitboxMat;
     hitboxMesh.visibility = 0; // invisible by default
 
-    // When hitbox exists, bulb should not catch clicks
-    bulb.isPickable = false;
+    // For single-part lights the explicit hitbox is the click target; bulb defers to it
+    if (!hasParts) bulb.isPickable = false;
   }
 
   return { bulb, extraBulbs, mat, light: pointLight, stripLights, shadowGen, hitboxMesh, hitboxMat };
@@ -264,27 +253,6 @@ function createPartMesh(
   return mesh;
 }
 
-/** Compute an axis-aligned bounding box around all parts. */
-function computePartsBounds(parts: LightPart[]): { center: Vector3; size: Vector3 } {
-  let minX = Infinity, minY = Infinity, minZ = Infinity;
-  let maxX = -Infinity, maxY = -Infinity, maxZ = -Infinity;
-  for (const p of parts) {
-    const sz = p.size || {};
-    const hw = (p.shape === 'cube' ? (sz.width ?? 0.3) : (sz.diameter ?? 0.25)) / 2;
-    const hh = (p.shape === 'cube' ? (sz.height ?? 0.3) : (sz.diameter ?? 0.25)) / 2;
-    const hd = (p.shape === 'cube' ? (sz.depth ?? 0.3) : (sz.diameter ?? 0.25)) / 2;
-    minX = Math.min(minX, p.position.x - hw);
-    maxX = Math.max(maxX, p.position.x + hw);
-    minY = Math.min(minY, p.position.y - hh);
-    maxY = Math.max(maxY, p.position.y + hh);
-    minZ = Math.min(minZ, p.position.z - hd);
-    maxZ = Math.max(maxZ, p.position.z + hd);
-  }
-  return {
-    center: new Vector3((minX + maxX) / 2, (minY + maxY) / 2, (minZ + maxZ) / 2),
-    size: new Vector3(maxX - minX, maxY - minY, maxZ - minZ),
-  };
-}
 
 /** Check if cube dimensions qualify as a strip (one axis ≥ STRIP_RATIO × smallest). */
 function detectStrip(sz: LightSize): boolean {
