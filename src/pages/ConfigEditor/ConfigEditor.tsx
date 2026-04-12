@@ -31,6 +31,11 @@ import {
   type DisplayMeshMap,
 } from '../../babylon/DisplayMeshFactory';
 import { getConfig, updateConfig, getModelBlob } from '../../services/configApi';
+import { getSetting } from '../../services/settingsStore';
+import { getEntityCache, setEntityCache } from '../../services/entityCache';
+import { HAConnection } from '../../services/haWebSocket';
+import type { HAEntityOption } from '../../components/SidePanel/EntityPicker';
+import type { HAState } from '../../types';
 import LightList from '../../components/LightList';
 import LightForm, { type PreviewInfo, type LightFormHandle } from '../../components/LightForm';
 import DisplayList from '../../components/DisplayList';
@@ -70,6 +75,7 @@ export default function ConfigEditor() {
   const lightFormRef = useRef<LightFormHandle>(null);
   const tubeAnchorRef = useRef<Mesh | null>(null);
 
+  const [haEntities, setHaEntities] = useState<HAEntityOption[]>([]);
   const [lights, setLights] = useState<LightConfig[]>([]);
   const [lightGroups, setLightGroups] = useState<LightGroup[]>([]);
   const [editIdx, setEditIdx] = useState<number | null>(null);
@@ -79,6 +85,33 @@ export default function ConfigEditor() {
   const [coordText, setCoordText] = useState('x: \u2014  z: \u2014  y: \u2014');
   const [toastMsg, setToastMsg] = useState('');
   const [toastVisible, setToastVisible] = useState(false);
+
+  // Load HA entity list for autocomplete in forms
+  useEffect(() => {
+    const cached = getEntityCache();
+    if (cached.length > 0) {
+      setHaEntities(cached);
+      return;
+    }
+    // Cache empty (fresh load or first visit) — fetch directly from HA
+    const { mode, haSettings } = getSetting('connection');
+    if (mode !== 'live' || !haSettings.url || !haSettings.token) return;
+    const conn = new HAConnection(
+      { url: haSettings.url, port: haSettings.port, token: haSettings.token },
+      {
+        onInitialStates: (states: HAState[]) => {
+          const entities: HAEntityOption[] = states
+            .map(s => ({ entity_id: s.entity_id, friendly_name: s.attributes.friendly_name as string | undefined }))
+            .sort((a, b) => a.entity_id.localeCompare(b.entity_id));
+          setEntityCache(entities);
+          setHaEntities(entities);
+          conn.dispose();
+        },
+      },
+    );
+    conn.connect();
+    return () => conn.dispose();
+  }, []);
 
   // Editor mode: lights, displays, walls, or tubes
   const [editorMode, setEditorMode] = useState<'lights' | 'displays' | 'walls' | 'tubes'>('lights');
@@ -1867,6 +1900,7 @@ export default function ConfigEditor() {
           onExitPlacingMode={exitPlacingMode}
           onPreviewChange={handlePreviewChange}
           placingMode={placingMode}
+          haEntities={haEntities}
         />
 
         <DisplayForm

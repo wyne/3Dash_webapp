@@ -20,6 +20,7 @@ import {
   type DisplayMeshMap,
 } from '../../babylon/DisplayMeshFactory';
 import { getConfig, updateConfig, getModelBlob } from '../../services/configApi';
+import { setEntityCache } from '../../services/entityCache';
 import { getSetting, updateSettings, type HomeViewPose } from '../../services/settingsStore';
 import { HAConnection, type HAConnectionStatus, type HALike, setActiveHAConnection } from '../../services/haWebSocket';
 import { DemoHAConnection } from '../../services/demoHAConnection';
@@ -1030,6 +1031,10 @@ export default function Dashboard() {
         });
       },
       onInitialStates: (states: HAState[]) => {
+        setEntityCache(
+          states.map(s => ({ entity_id: s.entity_id, friendly_name: s.attributes.friendly_name as string | undefined }))
+                .sort((a, b) => a.entity_id.localeCompare(b.entity_id)),
+        );
         const panelEntities = new Set<string>();
         for (const c of config.sidePanel?.cards ?? []) {
           panelEntities.add(c.entityId);
@@ -1542,6 +1547,10 @@ export default function Dashboard() {
       {cardPanelOpen && (
         <CardPropertiesPanel
           card={editingCard}
+          haEntities={Object.values(lastStatesRef.current).map(s => ({
+            entity_id: s.entity_id,
+            friendly_name: s.attributes.friendly_name as string | undefined,
+          }))}
           onSave={handleCardSave}
           onCancel={() => { setCardPanelOpen(false); setEditingCard(null); }}
           onPreview={handleCardPreview}
