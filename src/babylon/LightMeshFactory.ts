@@ -105,6 +105,7 @@ export function createLightMesh(
     }
     bulb.position = pos.clone();
     bulb.metadata = { entityId: cfg.entityId };
+    bulb.enablePointerMoveEvents = true;
     bulb.material = mat;
     bulb.applyFog = false;
   }
@@ -200,6 +201,7 @@ export function createLightMesh(
     }
     hitboxMesh.metadata = { entityId: cfg.entityId };
     hitboxMesh.isPickable = true;
+    hitboxMesh.enablePointerMoveEvents = true;
 
     hitboxMat = new StandardMaterial(`hitboxmat_${id}`, scene);
     hitboxMat.disableLighting = true;
