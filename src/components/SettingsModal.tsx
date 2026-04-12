@@ -61,6 +61,10 @@ interface Props {
   pointShadowRes: number;
   onPointShadowResChange: (res: number) => void;
 
+  /* Ambient light */
+  ambientIntensity: number;
+  onAmbientIntensityChange: (val: number) => void;
+
   /* Debug */
   onDebugToggle: () => void;
 
@@ -115,6 +119,8 @@ export default function SettingsModal({
   onSunShadowResChange,
   pointShadowRes,
   onPointShadowResChange,
+  ambientIntensity,
+  onAmbientIntensityChange,
   onDebugToggle,
   onEditGrid,
   onChangeHomeView,
@@ -643,6 +649,21 @@ export default function SettingsModal({
                       onChange={(e) => onEdgeWidthChange(parseFloat(e.target.value))}
                     />
                     <span className="settings-scrubber-time">{edgeWidth.toFixed(1)}</span>
+                  </div>
+                </div>
+
+                <div className="settings-section">
+                  <div className="settings-section-label">Ambient Light</div>
+                  <div className="settings-scrubber">
+                    <input
+                      type="range"
+                      min={0}
+                      max={1}
+                      step={0.05}
+                      value={ambientIntensity}
+                      onChange={(e) => onAmbientIntensityChange(parseFloat(e.target.value))}
+                    />
+                    <span className="settings-scrubber-time">{ambientIntensity.toFixed(2)}</span>
                   </div>
                 </div>
 

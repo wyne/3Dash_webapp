@@ -33,6 +33,7 @@ export interface RenderSettings {
   perspective: boolean;
   sunShadowRes: number;
   pointShadowRes: number;
+  ambientIntensity: number;
 }
 
 export interface EnvironmentSettings {
@@ -102,6 +103,7 @@ const DEFAULT_SETTINGS: AppSettings = {
     perspective: true,
     sunShadowRes: 512,
     pointShadowRes: 512,
+    ambientIntensity: 0.3,
   },
   environment: {
     sunLiveMode: true,

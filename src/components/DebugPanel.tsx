@@ -13,6 +13,7 @@ import type { StripConfig } from '../babylon/LightMeshFactory';
 import type { WeatherEffectsContext } from '../babylon/WeatherEffects';
 import type { WeatherData } from '../services/weatherApi';
 import { isRaining, isSnowing } from '../services/weatherApi';
+import { getSetting, updateSettings } from '../services/settingsStore';
 import './DebugPanel.css';
 
 interface Props {
@@ -100,7 +101,7 @@ export default function DebugPanel({
   const [sunDepthScale, setSunDepthScale] = useState(30);
 
   /* --- Ambient --- */
-  const [hemiIntensity, setHemiIntensity] = useState(0.2);
+  const [hemiIntensity, setHemiIntensity] = useState(() => getSetting('render').ambientIntensity);
 
   /* --- Point lights --- */
   const [plBias, setPlBias] = useState(0);
@@ -222,6 +223,7 @@ export default function DebugPanel({
 
   const handleHemiIntensity = useCallback((v: number) => {
     setHemiIntensity(v);
+    updateSettings('render', { ambientIntensity: v });
     const ctx = sceneCtxRef.current;
     if (ctx) ctx.hemiLight.intensity = v;
   }, [sceneCtxRef]);

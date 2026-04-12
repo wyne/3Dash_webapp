@@ -32,6 +32,7 @@ export function updateSunPosition(
   minutes?: number,
   northOffset?: number,
   cloudCoverFactor?: number,
+  ambientBoost?: number,
 ): void {
   const ccf = cloudCoverFactor ?? 1;
   const now = new Date();
@@ -74,11 +75,11 @@ export function updateSunPosition(
     const t = Math.min(altitude / (Math.PI / 6), 1);
     sun.diffuse = new Color3(1.0, 0.7 + 0.25 * t, 0.5 + 0.35 * t);
     sun.intensity = (0.3 + 0.8 * t) * ccf;
-    hemi.intensity = Math.max((0.4 + 0.2 * t) * ccf, 0.15);
+    hemi.intensity = Math.max((0.4 + 0.2 * t) * ccf, 0.15) + (ambientBoost ?? 0);
     hemi.diffuse = new Color3(0.85, 0.9, 1.0);
   } else {
     sun.intensity = 0;
-    hemi.intensity = 0.08;
+    hemi.intensity = 0.08 + (ambientBoost ?? 0);
     hemi.diffuse = new Color3(0.2, 0.25, 0.4);
   }
 }

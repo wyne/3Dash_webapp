@@ -23,6 +23,7 @@ interface Props {
   onSliderValueChange: (mins: number) => void;
   onScrubberTimeChange: (time: string) => void;
   cloudCoverFactor?: number;
+  ambientIntensity?: number;
 }
 
 export default function HUD({
@@ -38,6 +39,7 @@ export default function HUD({
   onSliderValueChange,
   onScrubberTimeChange,
   cloudCoverFactor,
+  ambientIntensity,
 }: Props) {
   const { demoMode } = useDemoMode();
   const { simulationMode } = useSimulationMode();
@@ -76,14 +78,14 @@ export default function HUD({
       const liveMin = now.getHours() * 60 + now.getMinutes();
       onSliderValueChange(liveMin);
       onScrubberTimeChange(minutesToLabel(liveMin));
-      updateSunPosition(sunLight, hemiLight, latitude, longitude, undefined, northOffset, cloudCoverFactor);
+      updateSunPosition(sunLight, hemiLight, latitude, longitude, undefined, northOffset, cloudCoverFactor, ambientIntensity);
       updateAutoTheme();
     }
 
     sunTick();
     const id = setInterval(sunTick, 60000);
     return () => clearInterval(id);
-  }, [sunLight, hemiLight, latitude, longitude, northOffset, cloudCoverFactor, onSliderValueChange, onScrubberTimeChange, updateAutoTheme]);
+  }, [sunLight, hemiLight, latitude, longitude, northOffset, cloudCoverFactor, ambientIntensity, onSliderValueChange, onScrubberTimeChange, updateAutoTheme]);
 
   if (!hudVisible) return null;
 

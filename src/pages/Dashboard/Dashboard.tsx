@@ -151,6 +151,9 @@ export default function Dashboard() {
   const [perspective, setPerspective] = useState(() => getSetting('render').perspective);
   const [sunShadowRes, setSunShadowRes] = useState(() => getSetting('render').sunShadowRes);
   const [pointShadowRes, setPointShadowRes] = useState(() => getSetting('render').pointShadowRes);
+  const [ambientIntensity, setAmbientIntensity] = useState(() => getSetting('render').ambientIntensity);
+  const ambientIntensityRef = useRef(ambientIntensity);
+  ambientIntensityRef.current = ambientIntensity;
 
   // Sync 3D background with theme (respects custom bgColor)
   const syncSceneBg = useCallback(() => {
@@ -221,7 +224,7 @@ export default function Dashboard() {
         const lat = configRef.current?.location.latitude ?? 43.6077;
         const lng = configRef.current?.location.longitude ?? 3.8766;
         const mins = sunLiveMode ? undefined : sliderValue;
-        updateSunPosition(ctx.sunLight, ctx.hemiLight, lat, lng, mins, northOffsetRef.current, 1);
+        updateSunPosition(ctx.sunLight, ctx.hemiLight, lat, lng, mins, northOffsetRef.current, 1, ambientIntensityRef.current);
       }
     }
   }, [sunLiveMode, sliderValue]);
@@ -272,6 +275,18 @@ export default function Dashboard() {
     // Re-freeze shadow maps
     freezePointLightShadows(meshMapRef.current);
   }, []);
+
+  const handleAmbientIntensityChange = useCallback((val: number) => {
+    setAmbientIntensity(val);
+    updateSettings('render', { ambientIntensity: val });
+    const ctx = sceneCtxRef.current;
+    if (ctx?.sunLight && ctx?.hemiLight) {
+      const lat = configRef.current?.location.latitude ?? 43.6077;
+      const lng = configRef.current?.location.longitude ?? 3.8766;
+      const mins = sunLiveMode ? undefined : sliderValue;
+      updateSunPosition(ctx.sunLight, ctx.hemiLight, lat, lng, mins, northOffsetRef.current, cloudCoverFactorRef.current, val);
+    }
+  }, [sunLiveMode, sliderValue]);
 
   // Apply perspective mode to the camera
   useEffect(() => {
@@ -331,7 +346,7 @@ export default function Dashboard() {
       if (ctx?.sunLight && ctx?.hemiLight) {
         const lat = configRef.current?.location.latitude ?? 43.6077;
         const lng = configRef.current?.location.longitude ?? 3.8766;
-        updateSunPosition(ctx.sunLight, ctx.hemiLight, lat, lng, mins, northOffsetRef.current, cloudCoverFactorRef.current);
+        updateSunPosition(ctx.sunLight, ctx.hemiLight, lat, lng, mins, northOffsetRef.current, cloudCoverFactorRef.current, ambientIntensityRef.current);
       }
       updateAutoTheme(mins);
     },
@@ -348,7 +363,7 @@ export default function Dashboard() {
       setScrubberTime(minutesToLabel(liveMin));
       const lat = configRef.current?.location.latitude ?? 43.6077;
       const lng = configRef.current?.location.longitude ?? 3.8766;
-      updateSunPosition(ctx.sunLight, ctx.hemiLight, lat, lng, undefined, northOffsetRef.current, cloudCoverFactorRef.current);
+      updateSunPosition(ctx.sunLight, ctx.hemiLight, lat, lng, undefined, northOffsetRef.current, cloudCoverFactorRef.current, ambientIntensityRef.current);
     }
   }, []);
 
@@ -363,7 +378,7 @@ export default function Dashboard() {
       const lat = configRef.current?.location.latitude ?? 43.6077;
       const lng = configRef.current?.location.longitude ?? 3.8766;
       const mins = sunLiveMode ? undefined : sliderValue;
-      updateSunPosition(ctx.sunLight, ctx.hemiLight, lat, lng, mins, degrees, cloudCoverFactorRef.current);
+      updateSunPosition(ctx.sunLight, ctx.hemiLight, lat, lng, mins, degrees, cloudCoverFactorRef.current, ambientIntensityRef.current);
     }
     // Debounced save to config
     if (northSaveTimerRef.current) clearTimeout(northSaveTimerRef.current);
@@ -1548,6 +1563,7 @@ export default function Dashboard() {
           onSliderValueChange={setSliderValue}
           onScrubberTimeChange={setScrubberTime}
           cloudCoverFactor={cloudCoverFactor}
+          ambientIntensity={ambientIntensity}
         />
 
         <DebugPanel
@@ -1629,6 +1645,8 @@ export default function Dashboard() {
           onSunShadowResChange={handleSunShadowResChange}
           pointShadowRes={pointShadowRes}
           onPointShadowResChange={handlePointShadowResChange}
+          ambientIntensity={ambientIntensity}
+          onAmbientIntensityChange={handleAmbientIntensityChange}
           onDebugToggle={() => setDebugOpen((v) => !v)}
           onEditGrid={() => setGridEditMode(true)}
           onChangeHomeView={() => setHomeViewSetting(true)}
