@@ -10,6 +10,7 @@ export interface HAEntityOption {
 interface Props {
   value: string;
   onChange: (val: string) => void;
+  onSelect?: (entity: HAEntityOption) => void;
   placeholder?: string;
   entities: HAEntityOption[];
   className?: string;
@@ -17,7 +18,7 @@ interface Props {
 
 const MAX_RESULTS = 50;
 
-export default function EntityPicker({ value, onChange, placeholder, entities, className }: Props) {
+export default function EntityPicker({ value, onChange, onSelect, placeholder, entities, className }: Props) {
   const [open, setOpen] = useState(false);
   const [highlighted, setHighlighted] = useState(0);
   const [rect, setRect] = useState<DOMRect | null>(null);
@@ -33,10 +34,11 @@ export default function EntityPicker({ value, onChange, placeholder, entities, c
     })
     .slice(0, MAX_RESULTS);
 
-  const select = useCallback((entity_id: string) => {
-    onChange(entity_id);
+  const select = useCallback((entity: HAEntityOption) => {
+    onChange(entity.entity_id);
+    onSelect?.(entity);
     setOpen(false);
-  }, [onChange]);
+  }, [onChange, onSelect]);
 
   const openDropdown = useCallback(() => {
     if (entities.length === 0) return;
@@ -90,7 +92,7 @@ export default function EntityPicker({ value, onChange, placeholder, entities, c
       setHighlighted(h => Math.max(h - 1, 0));
     } else if (e.key === 'Enter') {
       e.preventDefault();
-      if (filtered[highlighted]) select(filtered[highlighted].entity_id);
+      if (filtered[highlighted]) select(filtered[highlighted]);
     } else if (e.key === 'Escape') {
       setOpen(false);
     }
@@ -124,7 +126,7 @@ export default function EntityPicker({ value, onChange, placeholder, entities, c
               key={e.entity_id}
               ref={el => { itemRefs.current[i] = el; }}
               className={`entity-picker-item${i === highlighted ? ' highlighted' : ''}`}
-              onMouseDown={() => select(e.entity_id)}
+              onMouseDown={() => select(e)}
               onMouseEnter={() => setHighlighted(i)}
             >
               <span className="entity-picker-id">{e.entity_id}</span>

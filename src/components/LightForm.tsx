@@ -309,7 +309,14 @@ const LightForm = forwardRef<LightFormHandle, Props>(function LightForm({
       <AccordionSection title="Identity" defaultOpen>
         <div className="field-group">
           <label className="field-label">Entity ID</label>
-          <EntityPicker value={entityId} onChange={setEntityId} placeholder="light.salon" entities={haEntities} className="field-input" />
+          <EntityPicker
+            value={entityId}
+            onChange={setEntityId}
+            onSelect={e => { if (!label.trim() && e.friendly_name) setLabel(e.friendly_name); }}
+            placeholder="light.salon"
+            entities={haEntities}
+            className="field-input"
+          />
         </div>
         <div className="field-group">
           <label className="field-label">Label (display name)</label>
