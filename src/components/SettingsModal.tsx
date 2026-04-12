@@ -65,6 +65,10 @@ interface Props {
   ambientIntensity: number;
   onAmbientIntensityChange: (val: number) => void;
 
+  /* Off light style */
+  offLightStyle: 'dim' | 'globe';
+  onOffLightStyleChange: (style: 'dim' | 'globe') => void;
+
   /* Debug */
   onDebugToggle: () => void;
 
@@ -121,6 +125,8 @@ export default function SettingsModal({
   onPointShadowResChange,
   ambientIntensity,
   onAmbientIntensityChange,
+  offLightStyle,
+  onOffLightStyleChange,
   onDebugToggle,
   onEditGrid,
   onChangeHomeView,
@@ -664,6 +670,24 @@ export default function SettingsModal({
                       onChange={(e) => onAmbientIntensityChange(parseFloat(e.target.value))}
                     />
                     <span className="settings-scrubber-time">{ambientIntensity.toFixed(2)}</span>
+                  </div>
+                </div>
+
+                <div className="settings-section">
+                  <div className="settings-section-label">Off Light Style</div>
+                  <div className="settings-mode-toggle">
+                    <button
+                      className={`settings-mode-btn${offLightStyle === 'dim' ? ' active' : ''}`}
+                      onClick={() => onOffLightStyleChange('dim')}
+                    >
+                      Dim
+                    </button>
+                    <button
+                      className={`settings-mode-btn${offLightStyle === 'globe' ? ' active' : ''}`}
+                      onClick={() => onOffLightStyleChange('globe')}
+                    >
+                      Globe
+                    </button>
                   </div>
                 </div>
 

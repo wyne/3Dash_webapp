@@ -155,6 +155,7 @@ export default function Dashboard() {
   const [ambientIntensity, setAmbientIntensity] = useState(() => getSetting('render').ambientIntensity);
   const ambientIntensityRef = useRef(ambientIntensity);
   ambientIntensityRef.current = ambientIntensity;
+  const [offLightStyle, setOffLightStyle] = useState<'dim' | 'globe'>(() => getSetting('render').offLightStyle);
 
   // Sync 3D background with theme (respects custom bgColor)
   const syncSceneBg = useCallback(() => {
@@ -485,12 +486,23 @@ export default function Dashboard() {
           pl.intensity = 0;
           pl.setEnabled(false);
         }
-        mat.emissiveColor = new Color3(0, 0, 0);
+        const offStyle = getSetting('render').offLightStyle;
+        if (offStyle === 'globe') {
+          mat.wireframe = true;
+          mat.emissiveColor = new Color3(0.1, 0.15, 0.35);
+          mat.alpha = 0.6;
+        } else {
+          mat.wireframe = false;
+          mat.emissiveColor = new Color3(0.1, 0.08, 0.06);
+          mat.alpha = 0.35;
+        }
         updateLightsOnCount();
         return;
       }
 
       for (const pl of allLights) pl.setEnabled(true);
+      mat.wireframe = false;
+      mat.alpha = 1;
 
       const cfg = configRef.current?.lights.find((l) => l.entityId === entityId);
       const haBrightness = (attrs.brightness ?? 255) / 255;
@@ -547,6 +559,16 @@ export default function Dashboard() {
     },
     [updateLightsOnCount],
   );
+
+  const handleOffLightStyleChange = useCallback((style: 'dim' | 'globe') => {
+    setOffLightStyle(style);
+    updateSettings('render', { offLightStyle: style });
+    for (const [entityId, state] of Object.entries(lastStatesRef.current)) {
+      if (state.state !== 'on' && meshMapRef.current[entityId]) {
+        applyLightState(entityId, state);
+      }
+    }
+  }, [applyLightState]);
 
   // ── Pending-command highlight feedback ──────────────────────────
   const PENDING_COLOR = new Color3(0, 0.8, 1);   // cyan
@@ -1656,6 +1678,8 @@ export default function Dashboard() {
           onPointShadowResChange={handlePointShadowResChange}
           ambientIntensity={ambientIntensity}
           onAmbientIntensityChange={handleAmbientIntensityChange}
+          offLightStyle={offLightStyle}
+          onOffLightStyleChange={handleOffLightStyleChange}
           onDebugToggle={() => setDebugOpen((v) => !v)}
           onEditGrid={() => setGridEditMode(true)}
           onChangeHomeView={() => setHomeViewSetting(true)}

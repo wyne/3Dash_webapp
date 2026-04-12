@@ -34,6 +34,7 @@ export interface RenderSettings {
   sunShadowRes: number;
   pointShadowRes: number;
   ambientIntensity: number;
+  offLightStyle: 'dim' | 'globe';
 }
 
 export interface EnvironmentSettings {
@@ -104,6 +105,7 @@ const DEFAULT_SETTINGS: AppSettings = {
     sunShadowRes: 512,
     pointShadowRes: 512,
     ambientIntensity: 0.3,
+    offLightStyle: 'dim',
   },
   environment: {
     sunLiveMode: true,
