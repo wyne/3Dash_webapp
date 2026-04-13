@@ -331,6 +331,8 @@ export const SIMULATION_SETTINGS: AppSettings = {
     pointShadowRes: 512,
     ambientIntensity: 0.3,
     offLightStyle: 'dim',
+    offLightDimHue: 30,
+    offLightGlobeHue: 220,
   },
   environment: {
     sunLiveMode: true,

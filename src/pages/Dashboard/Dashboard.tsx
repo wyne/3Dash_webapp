@@ -29,6 +29,7 @@ import { useSimulationMode } from '../../contexts/SimulationModeContext';
 import { useCameraControls } from '../../contexts/CameraControlsContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { miredToKelvin, kelvinToRGB } from '../../utils/color';
+import { hslToRgb } from '../../components/ColorWheel';
 import { updateSunPosition, minutesToLabel } from '../../babylon/SunController';
 import { createWeatherEffects, type WeatherEffectsContext } from '../../babylon/WeatherEffects';
 import { fetchWeather, type WeatherData } from '../../services/weatherApi';
@@ -156,6 +157,8 @@ export default function Dashboard() {
   const ambientIntensityRef = useRef(ambientIntensity);
   ambientIntensityRef.current = ambientIntensity;
   const [offLightStyle, setOffLightStyle] = useState<'dim' | 'globe'>(() => getSetting('render').offLightStyle);
+  const [offLightDimHue, setOffLightDimHue] = useState(() => getSetting('render').offLightDimHue);
+  const [offLightGlobeHue, setOffLightGlobeHue] = useState(() => getSetting('render').offLightGlobeHue);
 
   // Sync 3D background with theme (respects custom bgColor)
   const syncSceneBg = useCallback(() => {
@@ -486,14 +489,17 @@ export default function Dashboard() {
           pl.intensity = 0;
           pl.setEnabled(false);
         }
-        const offStyle = getSetting('render').offLightStyle;
+        const renderSettings = getSetting('render');
+        const offStyle = renderSettings.offLightStyle;
         if (offStyle === 'globe') {
+          const { r, g, b } = hslToRgb(renderSettings.offLightGlobeHue);
           mat.wireframe = true;
-          mat.emissiveColor = new Color3(0.1, 0.15, 0.35);
+          mat.emissiveColor = new Color3(r / 255, g / 255, b / 255);
           mat.alpha = 0.6;
         } else {
+          const { r, g, b } = hslToRgb(renderSettings.offLightDimHue);
           mat.wireframe = false;
-          mat.emissiveColor = new Color3(0.1, 0.08, 0.06);
+          mat.emissiveColor = new Color3(r / 255, g / 255, b / 255);
           mat.alpha = 0.35;
         }
         updateLightsOnCount();
@@ -563,6 +569,26 @@ export default function Dashboard() {
   const handleOffLightStyleChange = useCallback((style: 'dim' | 'globe') => {
     setOffLightStyle(style);
     updateSettings('render', { offLightStyle: style });
+    for (const [entityId, state] of Object.entries(lastStatesRef.current)) {
+      if (state.state !== 'on' && meshMapRef.current[entityId]) {
+        applyLightState(entityId, state);
+      }
+    }
+  }, [applyLightState]);
+
+  const handleOffLightDimHueChange = useCallback((hue: number) => {
+    setOffLightDimHue(hue);
+    updateSettings('render', { offLightDimHue: hue });
+    for (const [entityId, state] of Object.entries(lastStatesRef.current)) {
+      if (state.state !== 'on' && meshMapRef.current[entityId]) {
+        applyLightState(entityId, state);
+      }
+    }
+  }, [applyLightState]);
+
+  const handleOffLightGlobeHueChange = useCallback((hue: number) => {
+    setOffLightGlobeHue(hue);
+    updateSettings('render', { offLightGlobeHue: hue });
     for (const [entityId, state] of Object.entries(lastStatesRef.current)) {
       if (state.state !== 'on' && meshMapRef.current[entityId]) {
         applyLightState(entityId, state);
@@ -1680,6 +1706,10 @@ export default function Dashboard() {
           onAmbientIntensityChange={handleAmbientIntensityChange}
           offLightStyle={offLightStyle}
           onOffLightStyleChange={handleOffLightStyleChange}
+          offLightDimHue={offLightDimHue}
+          onOffLightDimHueChange={handleOffLightDimHueChange}
+          offLightGlobeHue={offLightGlobeHue}
+          onOffLightGlobeHueChange={handleOffLightGlobeHueChange}
           onDebugToggle={() => setDebugOpen((v) => !v)}
           onEditGrid={() => setGridEditMode(true)}
           onChangeHomeView={() => setHomeViewSetting(true)}

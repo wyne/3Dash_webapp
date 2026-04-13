@@ -535,6 +535,29 @@
   }
 }
 
+/* Off-light color pickers */
+.settings-off-light-colors {
+  display: flex;
+  gap: 16px;
+  padding: 4px;
+}
+
+.settings-color-pick {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.settings-color-pick span {
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+
 /* Infos section */
 .settings-repo-link {
   display: inline-flex;

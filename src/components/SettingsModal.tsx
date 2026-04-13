@@ -6,6 +6,7 @@ import {
   Monitor, Smartphone, Search, RotateCw, Move,
   Github, HeartHandshake, Scale,
 } from 'lucide-react';
+import ColorWheel from './ColorWheel';
 import { buildWsUrl, type HAConnectionStatus } from '../services/haWebSocket';
 import type { HASettings } from '../types';
 import { getConfig, resetConfig, updateConfig, exportBackup, importBackup } from '../services/configApi';
@@ -68,6 +69,10 @@ interface Props {
   /* Off light style */
   offLightStyle: 'dim' | 'globe';
   onOffLightStyleChange: (style: 'dim' | 'globe') => void;
+  offLightDimHue: number;
+  onOffLightDimHueChange: (hue: number) => void;
+  offLightGlobeHue: number;
+  onOffLightGlobeHueChange: (hue: number) => void;
 
   /* Debug */
   onDebugToggle: () => void;
@@ -127,6 +132,10 @@ export default function SettingsModal({
   onAmbientIntensityChange,
   offLightStyle,
   onOffLightStyleChange,
+  offLightDimHue,
+  onOffLightDimHueChange,
+  offLightGlobeHue,
+  onOffLightGlobeHueChange,
   onDebugToggle,
   onEditGrid,
   onChangeHomeView,
@@ -688,6 +697,20 @@ export default function SettingsModal({
                     >
                       Globe
                     </button>
+                  </div>
+                </div>
+
+                <div className="settings-section">
+                  <div className="settings-section-label">Off Light Color</div>
+                  <div className="settings-off-light-colors">
+                    <div className="settings-color-pick">
+                      <span>Dim</span>
+                      <ColorWheel hue={offLightDimHue} onChange={onOffLightDimHueChange} />
+                    </div>
+                    <div className="settings-color-pick">
+                      <span>Globe</span>
+                      <ColorWheel hue={offLightGlobeHue} onChange={onOffLightGlobeHueChange} />
+                    </div>
                   </div>
                 </div>
 
