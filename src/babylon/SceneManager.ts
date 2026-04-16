@@ -23,6 +23,12 @@ export interface SceneContext {
   sunLight: DirectionalLight;
   glowLayer: GlowLayer | null;
   highlightLayer: HighlightLayer | null;
+  /** Request at least one more render frame. Call whenever scene state changes outside of user canvas input. */
+  markDirty: () => void;
+  /** Start a continuous-render animation (e.g. pulse feedback). Pair with endAnimation(). */
+  beginAnimation: () => void;
+  /** Stop a continuous-render animation started with beginAnimation(). */
+  endAnimation: () => void;
   dispose: () => void;
 }
 
@@ -107,20 +113,48 @@ export function createScene(
     highlightLayer.blurVerticalSize = 1;
   }
 
-  // Render loop
-  engine.runRenderLoop(() => scene.render());
+  // Render-on-demand: only call scene.render() when something has actually changed.
+  // This prevents the GPU from running at full speed when the scene is idle.
+  let _dirtyFrames = 2; // render a couple of frames on startup for initialization
+  let _continuousCount = 0; // number of active continuous animations (e.g. pulse feedback)
 
-  const onResize = () => engine.resize();
+  const markDirty = () => { _dirtyFrames = 3; };
+  const beginAnimation = () => { _continuousCount++; };
+  const endAnimation = () => { _continuousCount = Math.max(0, _continuousCount - 1); };
+
+  // Any canvas input (camera orbit/pan/zoom) marks the scene dirty
+  const onInput = () => { _dirtyFrames = 3; };
+  canvas.addEventListener('pointerdown', onInput, { passive: true });
+  canvas.addEventListener('pointermove', onInput, { passive: true });
+  canvas.addEventListener('pointerup', onInput, { passive: true });
+  canvas.addEventListener('wheel', onInput, { passive: true });
+
+  engine.runRenderLoop(() => {
+    // Also render while Babylon has active animatables (camera fly-to, etc.)
+    // or while particle systems are running (weather effects).
+    const hasAnimatables = scene.animatables.length > 0;
+    const hasParticles = scene.particleSystems.some(ps => ps.isStarted());
+    if (_dirtyFrames > 0 || _continuousCount > 0 || hasAnimatables || hasParticles) {
+      scene.render();
+      if (_dirtyFrames > 0) _dirtyFrames--;
+    }
+  });
+
+  const onResize = () => { engine.resize(); markDirty(); };
   window.addEventListener('resize', onResize);
 
   function dispose() {
+    canvas.removeEventListener('pointerdown', onInput);
+    canvas.removeEventListener('pointermove', onInput);
+    canvas.removeEventListener('pointerup', onInput);
+    canvas.removeEventListener('wheel', onInput);
     window.removeEventListener('resize', onResize);
     engine.stopRenderLoop();
     scene.dispose();
     engine.dispose();
   }
 
-  return { engine, scene, camera, hemiLight, sunLight, glowLayer, highlightLayer, dispose };
+  return { engine, scene, camera, hemiLight, sunLight, glowLayer, highlightLayer, markDirty, beginAnimation, endAnimation, dispose };
 }
 
 /**

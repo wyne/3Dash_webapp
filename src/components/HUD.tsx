@@ -24,6 +24,7 @@ interface Props {
   onScrubberTimeChange: (time: string) => void;
   cloudCoverFactor?: number;
   ambientIntensity?: number;
+  onMarkDirty?: () => void;
 }
 
 export default function HUD({
@@ -40,6 +41,7 @@ export default function HUD({
   onScrubberTimeChange,
   cloudCoverFactor,
   ambientIntensity,
+  onMarkDirty,
 }: Props) {
   const { demoMode } = useDemoMode();
   const { simulationMode } = useSimulationMode();
@@ -80,6 +82,7 @@ export default function HUD({
       onScrubberTimeChange(minutesToLabel(liveMin));
       updateSunPosition(sunLight, hemiLight, latitude, longitude, undefined, northOffset, cloudCoverFactor, ambientIntensity);
       updateAutoTheme();
+      onMarkDirty?.();
     }
 
     sunTick();

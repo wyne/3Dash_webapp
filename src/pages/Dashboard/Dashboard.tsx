@@ -162,22 +162,23 @@ export default function Dashboard() {
 
   // Sync 3D background with theme (respects custom bgColor)
   const syncSceneBg = useCallback(() => {
-    const scene = sceneCtxRef.current?.scene;
-    if (!scene) return;
+    const ctx = sceneCtxRef.current;
+    if (!ctx) return;
     const customBg = getSetting('appearance').bgColor;
     if (customBg) {
       const n = parseInt(customBg.replace('#', ''), 16);
-      scene.clearColor = new Color4(
+      ctx.scene.clearColor = new Color4(
         ((n >> 16) & 255) / 255,
         ((n >> 8) & 255) / 255,
         (n & 255) / 255,
         1,
       );
     } else {
-      scene.clearColor = theme === 'light'
+      ctx.scene.clearColor = theme === 'light'
         ? new Color4(0.94, 0.95, 0.96, 1)
         : new Color4(0.04, 0.055, 0.1, 1);
     }
+    ctx.markDirty();
   }, [theme]);
 
   useEffect(() => {
@@ -207,6 +208,7 @@ export default function Dashboard() {
     if (!scene) return;
     if (enabled) showGroundGrid(scene);
     else hideGroundGrid();
+    sceneCtxRef.current?.markDirty();
   }, []);
 
   const handleWeatherEnabledChange = useCallback((enabled: boolean) => {
@@ -248,13 +250,14 @@ export default function Dashboard() {
     if (!ctx || !casters) return;
     const oldSg = ctx.sunLight.getShadowGenerator();
     if (oldSg) oldSg.dispose();
-    if (res === 0) return;
+    if (res === 0) { ctx.markDirty(); return; }
     const sg = new ShadowGenerator(res, ctx.sunLight);
     sg.usePercentageCloserFiltering = true;
     sg.filteringQuality = ShadowGenerator.QUALITY_MEDIUM;
     sg.bias = 0.001;
     sg.normalBias = 0.02;
     for (const mesh of casters) sg.addShadowCaster(mesh, false);
+    ctx.markDirty();
   }, []);
 
   const handlePointShadowResChange = useCallback((res: number) => {
@@ -279,6 +282,7 @@ export default function Dashboard() {
     }
     // Re-freeze shadow maps
     freezePointLightShadows(meshMapRef.current);
+    sceneCtxRef.current?.markDirty();
   }, []);
 
   const handleAmbientIntensityChange = useCallback((val: number) => {
@@ -290,6 +294,7 @@ export default function Dashboard() {
       const lng = configRef.current?.location.longitude ?? 3.8766;
       const mins = sunLiveMode ? undefined : sliderValue;
       updateSunPosition(ctx.sunLight, ctx.hemiLight, lat, lng, mins, northOffsetRef.current, cloudCoverFactorRef.current, val);
+      ctx.markDirty();
     }
   }, [sunLiveMode, sliderValue]);
 
@@ -302,6 +307,7 @@ export default function Dashboard() {
 
     if (perspective) {
       camera.mode = Camera.PERSPECTIVE_CAMERA;
+      sceneCtxRef.current?.markDirty();
     } else {
       camera.mode = Camera.ORTHOGRAPHIC_CAMERA;
       const updateOrtho = () => {
@@ -313,6 +319,7 @@ export default function Dashboard() {
         camera.orthoRight = halfHeight * aspect;
       };
       updateOrtho();
+      sceneCtxRef.current?.markDirty();
       const obs = scene.onBeforeRenderObservable.add(updateOrtho);
       return () => { scene.onBeforeRenderObservable.remove(obs); };
     }
@@ -352,6 +359,7 @@ export default function Dashboard() {
         const lat = configRef.current?.location.latitude ?? 43.6077;
         const lng = configRef.current?.location.longitude ?? 3.8766;
         updateSunPosition(ctx.sunLight, ctx.hemiLight, lat, lng, mins, northOffsetRef.current, cloudCoverFactorRef.current, ambientIntensityRef.current);
+        ctx.markDirty();
       }
       updateAutoTheme(mins);
     },
@@ -369,6 +377,7 @@ export default function Dashboard() {
       const lat = configRef.current?.location.latitude ?? 43.6077;
       const lng = configRef.current?.location.longitude ?? 3.8766;
       updateSunPosition(ctx.sunLight, ctx.hemiLight, lat, lng, undefined, northOffsetRef.current, cloudCoverFactorRef.current, ambientIntensityRef.current);
+      ctx.markDirty();
     }
   }, []);
 
@@ -384,6 +393,7 @@ export default function Dashboard() {
       const lng = configRef.current?.location.longitude ?? 3.8766;
       const mins = sunLiveMode ? undefined : sliderValue;
       updateSunPosition(ctx.sunLight, ctx.hemiLight, lat, lng, mins, degrees, cloudCoverFactorRef.current, ambientIntensityRef.current);
+      ctx.markDirty();
     }
     // Debounced save to config
     if (northSaveTimerRef.current) clearTimeout(northSaveTimerRef.current);
@@ -403,6 +413,7 @@ export default function Dashboard() {
     setEdgeMode(mode);
     updateSettings('render', { edgeMode: mode });
     edgeOutlineRef.current?.setEnabled(mode === 'enhanced');
+    sceneCtxRef.current?.markDirty();
   }, []);
 
   const handleEdgeWidthChange = useCallback((width: number) => {
@@ -411,6 +422,7 @@ export default function Dashboard() {
     for (const mesh of modelMeshesRef.current) {
       mesh.edgesWidth = width;
     }
+    sceneCtxRef.current?.markDirty();
   }, []);
 
   // Count lights that are on
@@ -503,6 +515,7 @@ export default function Dashboard() {
           mat.alpha = 0.35;
         }
         updateLightsOnCount();
+        sceneCtxRef.current?.markDirty();
         return;
       }
 
@@ -562,6 +575,7 @@ export default function Dashboard() {
       );
 
       updateLightsOnCount();
+      sceneCtxRef.current?.markDirty();
     },
     [updateLightsOnCount],
   );
@@ -614,6 +628,7 @@ export default function Dashboard() {
     for (const m of pending.meshes) hl.removeMesh(m);
     ctx.scene.onBeforeRenderObservable.remove(pending.observer);
     pendingRef.current.delete(entityId);
+    ctx.endAnimation();
 
     // Reset blur if no more pending
     if (pendingRef.current.size === 0) {
@@ -673,6 +688,7 @@ export default function Dashboard() {
     const timer = setTimeout(() => showErrorFeedback(entityId), PENDING_TIMEOUT_MS);
 
     pendingRef.current.set(entityId, { observer: observer!, meshes, state, timer });
+    ctx.beginAnimation();
   }, [showErrorFeedback]);
 
   // Initialize everything
@@ -1000,6 +1016,7 @@ export default function Dashboard() {
         }
       };
 
+      ctx.markDirty();
       setSceneReady(true);
     }
 
@@ -1630,6 +1647,7 @@ export default function Dashboard() {
           onScrubberTimeChange={setScrubberTime}
           cloudCoverFactor={cloudCoverFactor}
           ambientIntensity={ambientIntensity}
+          onMarkDirty={() => sceneCtxRef.current?.markDirty()}
         />
 
         <DebugPanel
