@@ -1,6 +1,6 @@
 import { useRef, useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Animation, Camera, Color3, Color4, CubicEase, EasingFunction, ShadowGenerator, Tools, Vector3, type AbstractMesh, type Mesh, type Observer, type Scene } from '@babylonjs/core';
+import { Animation, Camera, Color3, Color4, CubicEase, EasingFunction, HighlightLayer, ShadowGenerator, Tools, Vector3, type AbstractMesh, type Mesh, type Observer, type Scene } from '@babylonjs/core';
 import { createScene, setupSunShadows, type SceneContext } from '../../babylon/SceneManager';
 import { loadModel, createShadowWalls, captureOriginalIndices, applyHiddenFaces, hideFace, resetHiddenFaces, clearHiddenFacesState } from '../../babylon/ModelLoader';
 import { createEdgeOutline, type EdgeOutlineControls } from '../../babylon/EdgeOutline';
@@ -704,6 +704,39 @@ export default function Dashboard() {
     const ctx = createScene(canvas, { enableGlow: true });
     sceneCtxRef.current = ctx;
 
+    // Separate HighlightLayer for hover outlines — keeps blur size independent
+    // of the pending-feedback layer's animated blur.
+    const hoverHL = new HighlightLayer('hoverHL', ctx.scene);
+    hoverHL.innerGlow = false;
+    hoverHL.outerGlow = true;
+    hoverHL.blurHorizontalSize = 0.4;
+    hoverHL.blurVerticalSize = 0.4;
+    const HOVER_COLOR = new Color3(1, 1, 1);
+
+    let hoveredEntity: string | null = null;
+    const applyHover = (entityId: string | null) => {
+      if (entityId === hoveredEntity) return;
+      // Clear previous hover
+      if (hoveredEntity) {
+        const prev = meshMapRef.current[hoveredEntity];
+        if (prev) {
+          for (const m of [prev.bulb, ...prev.extraBulbs].filter(Boolean) as Mesh[]) hoverHL.removeMesh(m);
+        }
+      }
+      hoveredEntity = entityId;
+      // Apply new hover
+      if (entityId) {
+        const entry = meshMapRef.current[entityId];
+        if (entry) {
+          for (const m of [entry.bulb, ...entry.extraBulbs].filter(Boolean) as Mesh[]) hoverHL.addMesh(m, HOVER_COLOR);
+        }
+      }
+      ctx.markDirty();
+    };
+
+    const clearHoverOnLeave = () => applyHover(null);
+    canvas.addEventListener('pointerleave', clearHoverOnLeave);
+
     let pressTimer: ReturnType<typeof setTimeout> | null = null;
     let pressedEntity: string | null = null;
     let pressStartX = 0;
@@ -1028,6 +1061,7 @@ export default function Dashboard() {
           }
         }
         const meshMeta = pickResult.pickedMesh?.metadata as { entityId?: string; displayId?: string; tubeId?: string } | null;
+        applyHover(pickResult.hit && meshMeta?.entityId ? meshMeta.entityId : null);
         if (pickResult.hit && (meshMeta?.entityId || meshMeta?.displayId || meshMeta?.tubeId)) {
           canvas!.style.cursor = 'pointer';
         } else {
@@ -1043,6 +1077,8 @@ export default function Dashboard() {
 
     return () => {
       disposed = true;
+      canvas.removeEventListener('pointerleave', clearHoverOnLeave);
+      hoverHL.dispose();
       if (singleTapTimer !== null) clearTimeout(singleTapTimer);
       // Clear all pending highlights
       for (const entityId of pendingRef.current.keys()) stopPendingFeedback(entityId);
