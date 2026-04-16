@@ -50,6 +50,7 @@ export function updateConfig(data: {
   sidePanel?: SidePanelConfig;
   tubes?: TubeConfig[];
   onboarding?: { completed: boolean };
+  hiddenFaces?: Record<string, number[]>;
 }): void {
   if (isSimulationActive()) {
     // Update in-memory override so the UI reacts, but never persist

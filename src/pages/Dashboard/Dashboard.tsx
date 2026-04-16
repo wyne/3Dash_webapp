@@ -2,7 +2,7 @@ import { useRef, useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Animation, Camera, Color3, Color4, CubicEase, EasingFunction, ShadowGenerator, Tools, Vector3, type AbstractMesh, type Mesh, type Observer, type Scene } from '@babylonjs/core';
 import { createScene, setupSunShadows, type SceneContext } from '../../babylon/SceneManager';
-import { loadModel, createShadowWalls } from '../../babylon/ModelLoader';
+import { loadModel, createShadowWalls, captureOriginalIndices, applyHiddenFaces, hideFace, resetHiddenFaces, clearHiddenFacesState } from '../../babylon/ModelLoader';
 import { createEdgeOutline, type EdgeOutlineControls } from '../../babylon/EdgeOutline';
 import {
   createLightMesh,
@@ -102,6 +102,9 @@ export default function Dashboard() {
   const modelDiagonalRef = useRef(1);
   const [debugOpen, setDebugOpen] = useState(false);
   const [homeViewSetting, setHomeViewSetting] = useState(false);
+  const [wallEditMode, setWallEditMode] = useState(false);
+  const wallEditModeRef = useRef(false);
+  wallEditModeRef.current = wallEditMode;
   const [panelSize, setPanelSize] = useState(() => {
     const mobile = window.matchMedia('(max-width: 768px)').matches;
     const saved = getSetting('misc').panelRatio;
@@ -786,6 +789,10 @@ export default function Dashboard() {
           (m) => m.getTotalVertices?.() > 0,
         );
 
+        // Snapshot original index buffers, then restore any persisted hidden faces
+        captureOriginalIndices(modelMeshesRef.current);
+        applyHiddenFaces(ctx.scene, configRef.current?.hiddenFaces ?? {});
+
         // Apply persisted edge width to model meshes (ModelLoader defaults to 3)
         {
           const w = getSetting('render').edgeWidth;
@@ -892,6 +899,18 @@ export default function Dashboard() {
         if (evt.button > 0) return;
         if (!pickResult.hit || !pickResult.pickedMesh) return;
         const meta = pickResult.pickedMesh.metadata as { entityId?: string; displayId?: string; tubeId?: string } | null;
+
+        // Wall edit mode — clicking model surfaces (no special metadata) hides that triangle face
+        if (wallEditModeRef.current) {
+          if (!meta?.entityId && !meta?.displayId && !meta?.tubeId && pickResult.faceId >= 0) {
+            const updated = hideFace(pickResult.pickedMesh, pickResult.faceId);
+            if (configRef.current) {
+              configRef.current.hiddenFaces = { ...updated };
+              updateConfig({ hiddenFaces: { ...updated } });
+            }
+          }
+          return;
+        }
 
         // Display click — immediate open, no long-press
         if (meta?.displayId) {
@@ -1038,6 +1057,7 @@ export default function Dashboard() {
       weatherRef.current?.dispose();
       weatherRef.current = null;
       disposeGroundGrid();
+      clearHiddenFacesState();
       ctx.dispose();
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -1344,6 +1364,16 @@ export default function Dashboard() {
   }, [applyLightState]);
 
   // Save current camera pose as the home view
+  const handleResetWalls = useCallback(() => {
+    const scene = sceneCtxRef.current?.scene;
+    if (!scene) return;
+    resetHiddenFaces(scene);
+    if (configRef.current) {
+      configRef.current.hiddenFaces = {};
+      updateConfig({ hiddenFaces: {} });
+    }
+  }, []);
+
   const saveHomeView = useCallback(() => {
     const ctx = sceneCtxRef.current;
     if (!ctx) return;
@@ -1739,6 +1769,7 @@ export default function Dashboard() {
           onOffLightGlobeHueChange={handleOffLightGlobeHueChange}
           onDebugToggle={() => setDebugOpen((v) => !v)}
           onEditGrid={() => setGridEditMode(true)}
+          onEditWalls={() => { setWallEditMode(true); setSettingsOpen(false); }}
           onChangeHomeView={() => setHomeViewSetting(true)}
           haSettings={getSetting('connection').haSettings}
           onHASettingsSave={(settings) => {
@@ -1761,6 +1792,25 @@ export default function Dashboard() {
               <button className="home-view-overlay-cancel" onClick={() => setHomeViewSetting(false)}>
                 Cancel
               </button>
+            </div>
+          </div>
+        )}
+
+        {wallEditMode && (
+          <div className="home-view-overlay">
+            <div className="home-view-overlay-box">
+              <p>Click surfaces to hide them</p>
+              <p className="home-view-overlay-hint">
+                Each click removes the front face — click again to reach faces behind it
+              </p>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button className="home-view-overlay-cancel" onClick={handleResetWalls}>
+                  Reset All
+                </button>
+                <button className="home-view-overlay-cancel" onClick={() => setWallEditMode(false)}>
+                  Done
+                </button>
+              </div>
             </div>
           </div>
         )}

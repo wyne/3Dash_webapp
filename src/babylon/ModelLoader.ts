@@ -141,6 +141,80 @@ function applyCartoonStyle(scene: Scene, meshes: AbstractMesh[]): void {
   }
 }
 
+/* ── Face-hide (wall removal) ── */
+
+/** Snapshots of original index buffers, keyed by mesh name. */
+const _originalIndices = new Map<string, number[]>();
+/** Currently hidden face IDs per mesh, keyed by mesh name. */
+const _hiddenFaces: Record<string, number[]> = {};
+
+/**
+ * Snapshot original index buffers for all meshes immediately after model load.
+ * Must be called before any face-hide operations.
+ */
+export function captureOriginalIndices(meshes: AbstractMesh[]): void {
+  _originalIndices.clear();
+  for (const k of Object.keys(_hiddenFaces)) delete _hiddenFaces[k];
+  for (const m of meshes) {
+    const idx = m.getIndices();
+    if (idx) _originalIndices.set(m.name, Array.from(idx));
+  }
+}
+
+/**
+ * Replay persisted hidden faces onto freshly loaded geometry.
+ * Call after captureOriginalIndices() with data from config.
+ */
+export function applyHiddenFaces(scene: Scene, stored: Record<string, number[]>): void {
+  for (const [meshName, faceIds] of Object.entries(stored)) {
+    const mesh = scene.getMeshByName(meshName);
+    if (!mesh) continue;
+    const origIdx = _originalIndices.get(meshName);
+    if (!origIdx) continue;
+    const indices = Array.from(origIdx);
+    for (const faceId of faceIds) {
+      indices[faceId * 3] = indices[faceId * 3 + 1] = indices[faceId * 3 + 2] = 0;
+    }
+    mesh.updateIndices(indices);
+    _hiddenFaces[meshName] = [...faceIds];
+  }
+}
+
+/**
+ * Hide a single triangle face by degenerating it in the index buffer.
+ * Returns the updated hiddenFaces map (for persisting to config).
+ */
+export function hideFace(mesh: AbstractMesh, faceId: number): Record<string, number[]> {
+  const current = mesh.getIndices();
+  if (!current) return _hiddenFaces;
+  const indices = Array.from(current);
+  indices[faceId * 3] = indices[faceId * 3 + 1] = indices[faceId * 3 + 2] = 0;
+  mesh.updateIndices(indices);
+  if (!_hiddenFaces[mesh.name]) _hiddenFaces[mesh.name] = [];
+  _hiddenFaces[mesh.name].push(faceId);
+  return _hiddenFaces;
+}
+
+/** Restore all original index buffers, making all hidden faces visible again. */
+export function resetHiddenFaces(scene: Scene): void {
+  for (const [meshName, origIdx] of _originalIndices.entries()) {
+    const mesh = scene.getMeshByName(meshName);
+    if (mesh) mesh.updateIndices(origIdx);
+  }
+  for (const k of Object.keys(_hiddenFaces)) delete _hiddenFaces[k];
+}
+
+/** Return the current hidden-face state (for persisting to config). */
+export function getHiddenFaces(): Record<string, number[]> {
+  return _hiddenFaces;
+}
+
+/** Clear module-level state — call on scene/model dispose. */
+export function clearHiddenFacesState(): void {
+  _originalIndices.clear();
+  for (const k of Object.keys(_hiddenFaces)) delete _hiddenFaces[k];
+}
+
 /**
  * Create invisible shadow wall meshes from config.
  * Hidden from the camera via layerMask but included in the shadow generator.

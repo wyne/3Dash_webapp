@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   Server, Palette, Box, MonitorCloud, Hand, Cog, Info,
-  Lightbulb, LayoutTemplate, ChevronLeft, X,
+  Lightbulb, LayoutTemplate, Layers, ChevronLeft, X,
   Monitor, Smartphone, Search, RotateCw, Move,
   Github, HeartHandshake, Scale,
 } from 'lucide-react';
@@ -80,6 +80,9 @@ interface Props {
   /* Grid edit */
   onEditGrid: () => void;
 
+  /* Wall face hide */
+  onEditWalls: () => void;
+
   /* Home view */
   onChangeHomeView: () => void;
 
@@ -138,6 +141,7 @@ export default function SettingsModal({
   onOffLightGlobeHueChange,
   onDebugToggle,
   onEditGrid,
+  onEditWalls,
   onChangeHomeView,
   haSettings,
   onHASettingsSave,
@@ -396,6 +400,13 @@ export default function SettingsModal({
                 >
                   <LayoutTemplate size={20} strokeWidth={1.5} />
                   <span>Edit Grid</span>
+                </button>
+                <button
+                  className="settings-big-btn"
+                  onClick={() => { onEditWalls(); onClose(); }}
+                >
+                  <Layers size={20} strokeWidth={1.5} />
+                  <span>Edit Walls</span>
                 </button>
               </div>
             </div>

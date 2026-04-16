@@ -156,6 +156,8 @@ export interface AppConfig {
   sidePanel?: SidePanelConfig;
   tubes?: TubeConfig[];
   onboarding?: OnboardingState;
+  /** Hidden triangle faces per mesh: meshName → array of faceIds degenerated for see-through. */
+  hiddenFaces?: Record<string, number[]>;
 }
 
 export interface HASettings {
