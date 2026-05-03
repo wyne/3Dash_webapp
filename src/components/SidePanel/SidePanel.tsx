@@ -1,4 +1,5 @@
 import { useRef, useState, useEffect, useCallback } from 'react';
+import { ChevronLeft, ChevronRight, ChevronUp, ChevronDown } from 'lucide-react';
 import type { SidePanelConfig, SidePanelCard, HAState, CardLayout } from '../../types';
 import type { HALike } from '../../services/haWebSocket';
 import CardGrid from './CardGrid';
@@ -13,6 +14,8 @@ interface Props {
   panelSize: number;
   /** Called while dragging the resize handle. */
   onPanelResize: (size: number) => void;
+  collapsed?: boolean;
+  onToggleCollapse?: () => void;
   editMode?: boolean;
   onEditDone?: () => void;
   onLayoutChange?: (layouts: Record<string, CardLayout>) => void;
@@ -26,7 +29,7 @@ interface Props {
 
 const PANEL_PADDING = 24; // 12px each side
 
-export default function SidePanel({ config, ha, cardStates, onSettingsOpen, panelSize, onPanelResize, editMode, onEditDone, onLayoutChange, onSetTemperature, onSetHvacMode, onCardEdit, onCardDelete, onCardAdd, onExitSimulation }: Props) {
+export default function SidePanel({ config, ha, cardStates, onSettingsOpen, panelSize, onPanelResize, collapsed, onToggleCollapse, editMode, onEditDone, onLayoutChange, onSetTemperature, onSetHvacMode, onCardEdit, onCardDelete, onCardAdd, onExitSimulation }: Props) {
   const innerRef = useRef<HTMLDivElement>(null);
   const gridWidth = panelSize - PANEL_PADDING;
   const [gridHeight, setGridHeight] = useState(200);
@@ -98,8 +101,10 @@ export default function SidePanel({ config, ha, cardStates, onSettingsOpen, pane
     }
   }, [onDragStart]);
 
+  const isMobileLayout = window.matchMedia('(max-width: 768px)').matches;
+
   return (
-    <div className="side-panel" style={{ width: `${panelSize}px` }}>
+    <div className={`side-panel${collapsed ? ' collapsed' : ''}`} style={{ width: `${panelSize}px` }}>
       <div className="side-panel-inner" ref={innerRef}>
         <div className="side-panel-content">
           {config && config.cards.length > 0 && (
@@ -144,10 +149,24 @@ export default function SidePanel({ config, ha, cardStates, onSettingsOpen, pane
       </div>
       <div
         className="side-panel-handle"
-        onMouseDown={handleMouseDown}
-        onTouchStart={handleTouchStart}
+        onMouseDown={collapsed ? undefined : handleMouseDown}
+        onTouchStart={collapsed ? undefined : handleTouchStart}
       >
-        <div className="side-panel-handle-bar" />
+        {!collapsed && <div className="side-panel-handle-bar" />}
+        {onToggleCollapse && (
+          <button
+            className="side-panel-collapse-btn"
+            onClick={onToggleCollapse}
+            onMouseDown={(e) => e.stopPropagation()}
+            onTouchStart={(e) => e.stopPropagation()}
+            title={collapsed ? 'Expand panel' : 'Collapse panel'}
+          >
+            {isMobileLayout
+              ? collapsed ? <ChevronUp size={10} /> : <ChevronDown size={10} />
+              : collapsed ? <ChevronRight size={10} /> : <ChevronLeft size={10} />
+            }
+          </button>
+        )}
       </div>
     </div>
   );

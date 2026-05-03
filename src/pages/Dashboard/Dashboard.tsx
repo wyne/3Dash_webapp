@@ -113,6 +113,21 @@ export default function Dashboard() {
     }
     return mobile ? 280 : 350;
   });
+  const [isPanelCollapsed, setIsPanelCollapsed] = useState(false);
+
+  useEffect(() => {
+    const saved = getSetting('misc').panelCollapsed;
+    if (saved !== null) {
+      setIsPanelCollapsed(saved);
+    }
+  }, []);
+
+  const togglePanelCollapse = useCallback(() => {
+    const newCollapsedState = !isPanelCollapsed;
+    setIsPanelCollapsed(newCollapsedState);
+    // Persist this new state
+    updateSettings('misc', { panelCollapsed: newCollapsedState })
+  }, [isPanelCollapsed, updateSettings]);
 
   const handlePanelResize = useCallback((size: number) => {
     setPanelSize(size);
@@ -1659,7 +1674,7 @@ export default function Dashboard() {
 
 
   return (
-    <div className="dashboard-wrapper" style={{ '--panel-size': `${(sidePanelConfig?.cards?.length || gridEditMode) ? panelSize : 0}px` } as React.CSSProperties}>
+    <div className="dashboard-wrapper" style={{ '--panel-size': `${(!isPanelCollapsed && (sidePanelConfig?.cards?.length || gridEditMode)) ? panelSize : 0}px` } as React.CSSProperties}>
       <SidePanel
         config={sidePanelConfig}
         ha={haRef.current}
@@ -1667,6 +1682,8 @@ export default function Dashboard() {
         onSettingsOpen={() => setSettingsOpen(true)}
         panelSize={panelSize}
         onPanelResize={handlePanelResize}
+        collapsed={isPanelCollapsed}
+        onToggleCollapse={togglePanelCollapse}
         editMode={gridEditMode}
         onEditDone={handleEditGridDone}
         onLayoutChange={handleGridLayoutChange}

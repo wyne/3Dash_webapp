@@ -61,6 +61,7 @@ export interface ControlsSettings {
 
 export interface MiscSettings {
   panelRatio: number | null;
+  panelCollapsed: boolean;
 }
 
 /* ── Root interface ── */
@@ -124,6 +125,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   },
   misc: {
     panelRatio: null,
+    panelCollapsed: false,
   },
 };
 
