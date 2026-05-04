@@ -62,8 +62,8 @@ export default function HUD({
   useEffect(() => {
     function tick() {
       const now = new Date();
-      setClock(now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }));
-      setDate(now.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' }));
+      setClock(now.toLocaleTimeString(window.navigator?.language || 'en-US', { hour: '2-digit', minute: '2-digit', hour12: true }));
+      setDate(now.toLocaleDateString(window.navigator?.language || 'en-US', { weekday: 'short', day: 'numeric', month: 'short' }));
     }
     tick();
     const id = setInterval(tick, 1000);
